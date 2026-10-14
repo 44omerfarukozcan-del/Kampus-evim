@@ -8,7 +8,7 @@ urlpatterns = [
     path('giris/', views.giris_yap, name='giris_yap'),
     path('kayit/', views.kayit_ol, name='kayit_ol'),
     path('cikis/', views.cikis_yap, name='cikis_yap'),
-    path('ilanlar/', views.ilanlar, name='ilanlar'),
+   
     
     # ---- ŞİFRE SIFIRLAMA SAYFALARI ----
     path('sifre-sifirla/', auth_views.PasswordResetView.as_view(
