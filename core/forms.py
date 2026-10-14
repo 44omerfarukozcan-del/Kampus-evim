@@ -117,28 +117,48 @@ class ProfilGuncellemeFormu(forms.ModelForm):
             profil.save()
         return profil
 
-
 # 3. İLAN EKLEME VE DÜZENLEME FORMU
 class IlanForm(forms.ModelForm):
+    ILAN_TURU_SECENEKLERI = [
+        ('Ev Arkadaşı Arayan', 'Ev Arkadaşı Arayan (Evim var, arkadaş arıyorum)'),
+        ('Oda Arayan', 'Oda Arayan (Kalacak yer/oda arıyorum)'),
+    ]
+    ODA_SAYISI_SECENEKLERI = [
+        ('1+0 (Stüdyo)', '1+0 (Stüdyo)'),
+        ('1+1', '1+1'),
+        ('2+1', '2+1'),
+        ('3+1', '3+1'),
+        ('4+1 ve üzeri', '4+1 ve üzeri'),
+        ('Paylaşımlı Oda', 'Paylaşımlı Oda'),
+    ]
+
+    ilan_turu = forms.ChoiceField(
+        choices=ILAN_TURU_SECENEKLERI,
+        label='İlan Türü',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+    oda_sayisi = forms.ChoiceField(
+        choices=ODA_SAYISI_SECENEKLERI,
+        label='Oda Sayısı',
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
     class Meta:
         model = Ilan
         fields = ['baslik', 'ilan_turu', 'oda_sayisi', 'fiyat', 'ilan_resmi', 'aciklama']
         labels = {
             'baslik': 'İlan Başlığı',
-            'ilan_turu': 'İlan Türü',
-            'oda_sayisi': 'Oda Sayısı',
             'fiyat': 'Aylık Kira / Bütçe (TL)',
             'ilan_resmi': 'Ev / Oda Fotoğrafı',
             'aciklama': 'İlan Açıklaması',
         }
         widgets = {
             'baslik': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Atakum sahile yakın 2+1 daireye ev arkadaşı'}),
-            'ilan_turu': forms.Select(attrs={'class': 'form-select'}),
-            'oda_sayisi': forms.Select(attrs={'class': 'form-select'}),
             'fiyat': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Örn: 6500'}),
             'ilan_resmi': forms.FileInput(attrs={'class': 'form-control'}),
             'aciklama': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Ev ve aradığınız kriterler hakkında detaylı bilgi yazın...'}),
         }
+        
 
 
 # 4. ADLİ SİCİL BELGESİ YÜKLEME FORMU
