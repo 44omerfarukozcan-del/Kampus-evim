@@ -1,0 +1,65 @@
+{% extends 'core/base.html' %}
+{% block title %}İlanlar - KampüsEvim{% endblock %}
+
+{% block content %}
+<h2 class="text-primary fw-bold text-center mb-4">🏠 Tüm İlanlar</h2>
+
+<!-- ARAMA FORMU -->
+<div class="card shadow-sm mb-4 border-0 bg-white">
+    <div class="card-body">
+        <form method="GET" action="/ilanlar/" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label text-muted fw-bold">Kelime veya Semt Ara</label>
+                <input type="text" name="q" class="form-control" placeholder="Örn: Atakum, Balkonlu..." value="{{ request.GET.q }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted fw-bold">İlan Türü</label>
+                <select name="ilan_turu" class="form-select">
+                    <option value="">Tümü</option>
+                    <option value="Oda Arayan" {% if request.GET.ilan_turu == 'Oda Arayan' %}selected{% endif %}>Oda Arayan</option>
+                    <option value="Ev Arkadaşı Arayan" {% if request.GET.ilan_turu == 'Ev Arkadaşı Arayan' %}selected{% endif %}>Ev Arkadaşı Arayan</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label text-muted fw-bold">Maksimum Bütçe (TL)</label>
+                <input type="number" name="max_fiyat" class="form-control" placeholder="Örn: 5000" value="{{ request.GET.max_fiyat }}">
+            </div>
+            <div class="col-md-2 d-grid gap-2">
+                <button type="submit" class="btn btn-primary fw-bold">Filtrele</button>
+                <a href="/ilanlar/" class="btn btn-outline-secondary btn-sm">Temizle</a>
+            </div>
+        </form>
+    </div>
+</div>
+<hr>
+
+<!-- İLANLAR -->
+<div class="row">
+    {% for ilan in ilanlar %}
+    <div class="col-md-4 mb-4">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-header bg-dark text-white fw-bold">
+                {{ ilan.ilan_turu }}
+            </div>
+            <div class="card-body">
+                <h5 class="card-title text-primary">{{ ilan.baslik }}</h5>
+                <p class="card-text text-muted">{{ ilan.aciklama|truncatewords:15 }}</p>
+                <ul class="list-group list-group-flush mb-3">
+                    <li class="list-group-item px-0 text-success fw-bold"><b>Fiyat:</b> {{ ilan.fiyat }} TL / Ay</li>
+                </ul>
+            </div>
+            <!-- YENİ: DETAYLARI GÖR BUTONU EKLENDİ -->
+            <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center pb-3">
+                <small class="text-muted">{{ ilan.olusturulma_tarihi|date:"d M Y" }}</small>
+                <a href="/ilan/{{ ilan.id }}/" class="btn btn-sm btn-primary">Detayları Gör</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center mt-5">
+        <p class="text-muted fs-5">Kriterlerinize uygun ilan bulunamadı.</p>
+        <a href="/ilan-ekle/" class="btn btn-success">İlk İlanı Sen Ver!</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

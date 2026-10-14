@@ -1,0 +1,25 @@
+{% extends 'core/base.html' %}
+{% block title %}Belge Yükle - KampüsEvim{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm mt-5 border-0">
+            <div class="card-header bg-primary text-white text-center fw-bold fs-5">
+                📄 Adli Sicil Belgesi Yükleme
+            </div>
+            <div class="card-body p-4 text-center">
+                <p class="text-muted mb-4">Güvenlik skoru hesaplaması ve ilan verebilmeniz için lütfen e-Devlet üzerinden aldığınız barkodlu PDF belgenizi yükleyiniz.</p>
+                
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3 text-start">
+                        {{ form.as_p }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100 fw-bold btn-lg">Belgeyi Yükle ve Onaya Gönder</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

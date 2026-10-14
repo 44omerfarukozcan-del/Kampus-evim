@@ -1,0 +1,23 @@
+{% extends 'core/base.html' %}
+{% block title %}İlan Ver - KampüsEvim{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm mt-4 border-primary">
+            <div class="card-header bg-primary text-white text-center fw-bold">
+                ➕ Yeni İlan Oluştur
+            </div>
+            <div class="card-body p-4">
+                <p class="text-muted text-center mb-4">Ev arkadaşı veya oda arayışınızı detaylı bir şekilde yazın.</p>
+                
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100 btn-lg mt-3">İlanı Yayınla</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends 'core/base.html' %}
+{% block title %}İlanı Düzenle - KampüsEvim{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm mt-4 border-warning">
+            <div class="card-header bg-warning text-dark text-center fw-bold">
+                ✏️ İlanı Düzenle
+            </div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-warning w-100 btn-lg mt-3 fw-bold">Değişiklikleri Kaydet</button>
+                </form>
+            </div>
+            <div class="card-footer text-center bg-white border-0 pb-4">
+                <a href="/profil/" class="text-muted">İptal Et ve Profile Dön</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

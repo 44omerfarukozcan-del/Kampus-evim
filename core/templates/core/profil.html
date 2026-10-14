@@ -1,0 +1,71 @@
+{% extends 'core/base.html' %}
+{% block title %}Profilim - KampüsEvim{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <!-- PROFİL BİLGİLERİ VE GÜVEN SKORU -->
+    <div class="col-md-5">
+        <div class="card shadow-sm mt-4 border-0">
+            <div class="card-header bg-warning text-dark text-center fw-bold">👤 Profil Bilgilerim</div>
+            <div class="card-body text-center">
+                <p class="mb-3"><b>E-posta:</b> {{ user.email }}</p>
+                {% if profil.profil_resmi %}
+                    <img src="{{ profil.profil_resmi.url }}" alt="Profil Resmi" class="rounded-circle shadow border border-3 border-warning" style="width: 150px; height: 150px; object-fit: cover;">
+                {% else %}
+                    <img src="/media/profil_resimleri/default.png" alt="Varsayılan Profil" class="rounded-circle shadow border border-3 border-secondary" style="width: 150px; height: 150px; object-fit: cover;">
+                {% endif %}
+                
+                <hr class="my-4">
+                
+                <!-- GÜVEN SKORU ÇUBUĞU (YENİ) -->
+                <h6 class="text-start fw-bold text-success mb-2">🛡️ Hesabınızın Güven Skoru</h6>
+                <div class="progress mb-4" style="height: 25px;">
+                    <div class="progress-bar {% if profil.guven_skoru >= 80 %}bg-success{% elif profil.guven_skoru >= 50 %}bg-warning text-dark{% else %}bg-danger{% endif %} progress-bar-striped progress-bar-animated fw-bold fs-6" role="progressbar" style="width: {{ profil.guven_skoru }}%;" aria-valuenow="{{ profil.guven_skoru }}" aria-valuemin="0" aria-valuemax="100">
+                        %{{ profil.guven_skoru }}
+                    </div>
+                </div>
+
+                <h5 class="text-primary mb-3">Bilgilerimi Güncelle</h5>
+                <form method="POST" enctype="multipart/form-data" class="text-start">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-warning w-100 fw-bold mt-2">Değişiklikleri Kaydet</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- KULLANICININ VERDİĞİ İLANLAR -->
+    <div class="col-md-7">
+        <div class="card shadow-sm mt-4 border-0">
+            <div class="card-header bg-success text-white text-center fw-bold">📢 Verdiğim İlanlar</div>
+            <div class="card-body p-0">
+                {% if ilanlar %}
+                    <div class="list-group list-group-flush">
+                        {% for ilan in ilanlar %}
+                            <div class="list-group-item p-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 text-primary fw-bold"><a href="/ilan/{{ ilan.id }}/" class="text-decoration-none">{{ ilan.baslik }}</a></h6>
+                                    <span class="badge bg-success rounded-pill fs-6">{{ ilan.fiyat }} TL</span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <small class="text-muted">{{ ilan.olusturulma_tarihi|date:"d M Y" }} - {{ ilan.ilan_turu }}</small>
+                                    <div>
+                                        <a href="/ilan-duzenle/{{ ilan.id }}/" class="btn btn-sm btn-outline-primary me-1">✏️ Düzenle</a>
+                                        <a href="/ilan-sil/{{ ilan.id }}/" class="btn btn-sm btn-outline-danger">🗑️ Sil</a>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="p-5 text-center">
+                        <p class="text-muted fs-5">Henüz hiç ilan vermediniz.</p>
+                        <a href="/ilan-ekle/" class="btn btn-outline-success">Hemen İlan Ver</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

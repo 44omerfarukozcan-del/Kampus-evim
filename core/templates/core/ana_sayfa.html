@@ -1,0 +1,45 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Ana Sayfa - KampüsEvim{% endblock %}
+
+{% block content %}
+<div class="p-5 mb-4 bg-white rounded-3 shadow-sm text-center">
+    <div class="container-fluid py-5">
+        <h1 class="display-5 fw-bold text-primary">KampüsEvim'e Hoş Geldiniz!</h1>
+        <p class="col-md-8 mx-auto fs-4 text-muted">
+            Samsun Üniversitesi öğrencileri için güvenilir ev ve oda arkadaşı bulma platformu.
+        </p>
+        
+        {% if user.is_authenticated %}
+            <div class="alert alert-success d-inline-block mt-3 shadow-sm">
+                Hoş geldin, <b>{{ user.email }}</b>! Sisteme başarıyla giriş yaptın.
+            </div><br>
+            <a href="/ilan-ekle/" class="btn btn-primary btn-lg mt-3 px-5">Hemen İlan Ver</a>
+        {% else %}
+            <a href="/kayit/" class="btn btn-primary btn-lg mt-3 px-5">Hemen Kayıt Ol</a>
+            <a href="/giris/" class="btn btn-outline-secondary btn-lg mt-3 px-5">Giriş Yap</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row text-center">
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body">
+                <h5 class="card-title text-primary">Son İlanlar</h5>
+                <p class="card-text text-muted">Öğrenci evlerine veya boş odalara göz atın.</p>
+                <a href="/ilanlar/" class="btn btn-outline-primary">Tüm İlanları Gör</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm h-100 border-0">
+            <div class="card-body">
+                <h5 class="card-title text-success">Güvenli Topluluk</h5>
+                <p class="card-text text-muted">Sadece edu.tr uzantılı öğrenci hesapları ile giriş yapılır.</p>
+                <a href="/belge-yukle/" class="btn btn-outline-success">Adli Sicil Belgeni Yükle</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

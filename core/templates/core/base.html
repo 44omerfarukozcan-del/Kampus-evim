@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}KampüsEvim{% endblock %}</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: #f8f9fa;
+        }
+        main {
+            flex: 1;
+        }
+        .card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+        }
+        .navbar {
+            background-color: rgba(13, 110, 253, 0.95) !important;
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ÜST MENÜ (NAVBAR) -->
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm sticky-top">
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-4" href="/">🏠 KampüsEvim</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    <li class="nav-item"><a class="nav-link" href="/ilanlar/">Tüm İlanlar</a></li>
+                    
+                    {% if user.is_authenticated %}
+                        <li class="nav-item ms-2"><a class="btn btn-warning btn-sm fw-bold text-dark" href="/ilan-ekle/">➕ İlan Ver</a></li>
+                        <li class="nav-item ms-2"><a class="nav-link" href="/belge-yukle/">Belge Yükle</a></li>
+                        <li class="nav-item ms-2"><a class="nav-link text-white fw-bold" href="/profil/">👤 Profilim</a></li>
+                        <li class="nav-item ms-2"><a class="btn btn-outline-light btn-sm" href="/cikis/">Çıkış</a></li>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="/giris/">Giriş Yap</a></li>
+                        <li class="nav-item"><a class="btn btn-success text-white ms-2 px-4" href="/kayit/">Kayıt Ol</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- SAYFA İÇERİKLERİ VE HATA MESAJLARI -->
+    <main class="container mt-5 mb-5">
+        <!-- YENİ: UYARI MESAJLARI BURADA ÇIKACAK -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-dark text-white pt-5 pb-4 mt-auto">
+        <div class="container text-center text-md-start">
+            <div class="row text-center text-md-start">
+                <div class="col-md-5 col-lg-5 col-xl-5 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold text-warning">🏠 KampüsEvim</h5>
+                    <p>Samsun Üniversitesi öğrencileri için güvenilir ev ve oda arkadaşı bulma platformu. Eğitim e-postası doğrulaması ve adli sicil kontrolü ile her zaman güvende kalın.</p>
+                </div>
+                <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold text-warning">Hızlı Linkler</h5>
+                    <p><a href="/ilanlar/" class="text-white text-decoration-none">Tüm İlanlar</a></p>
+                    <p><a href="/kayit/" class="text-white text-decoration-none">Kayıt Ol</a></p>
+                    <p><a href="/giris/" class="text-white text-decoration-none">Giriş Yap</a></p>
+                </div>
+                <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
+                    <h5 class="text-uppercase mb-4 fw-bold text-warning">İletişim</h5>
+                    <p>📍 Samsun, Türkiye</p>
+                    <p>📧 destek@kampusevim.com</p>
+                </div>
+            </div>
+            <hr class="mb-4">
+            <div class="row align-items-center">
+                <div class="col-md-12 col-lg-12 text-center">
+                    <p>© 2026 Tüm Hakları Saklıdır: <strong class="text-warning">Ömer Faruk Özcan</strong> - KampüsEvim Projesi</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>KampüsEvim - Kayıt Ol</title>
+</head>
+<body>
+    <h1>Öğrenci Kayıt Formu</h1>
+    
+    <p><em>Not: Sadece üniversite uzantılı (.edu.tr) bir e-posta ile kayıt olabilirsiniz.</em></p>
+
+    <!-- Kayıt Formu -->
+    <form method="POST">
+        {% csrf_token %} <!-- Django'nun güvenlik önlemi (Zorunlu) -->
+        {{ form.as_p }} <!-- forms.py'den gelen formu otomatik olarak alt alta (paragraf) dizer -->
+        
+        <button type="submit">Kayıt Ol</button>
+    </form>
+    
+    <br>
+    <a href="/">Ana Sayfaya Dön</a>
+</body>
+</html>
