@@ -7,7 +7,8 @@ urlpatterns = [
     path('', views.ana_sayfa, name='ana_sayfa'),
     path('giris/', views.giris_yap, name='giris_yap'),
     path('kayit/', views.kayit_ol, name='kayit_ol'),
-    path('cikis/', views.cikis_yap, name='cikis_yap'), 
+    path('cikis/', views.cikis_yap, name='cikis_yap'),
+    path('ilanlar/', views.ilanlar, name='ilanlar'), # <-- İŞTE KAYBOLAN İLANLAR SAYFAN BURADA
     
     # ---- ŞİFRE SIFIRLAMA SAYFALARI ----
     path('sifre-sifirla/', auth_views.PasswordResetView.as_view(
