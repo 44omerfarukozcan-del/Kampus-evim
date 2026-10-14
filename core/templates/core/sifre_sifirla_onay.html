@@ -1,0 +1,36 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<style>
+    .auth-form input { display: block; width: 100%; padding: 0.5rem; border: 1px solid #ced4da; border-radius: 0.375rem; margin-bottom: 1rem; }
+    .auth-form label { font-weight: bold; margin-bottom: 0.5rem; color: #333; }
+    .auth-form ul { list-style: none; padding-left: 0; color: #dc3545; font-size: 0.85em; }
+    .auth-form .helptext { font-size: 0.8em; color: #6c757d; display: block; margin-bottom: 15px;}
+</style>
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-success text-white text-center py-4">
+                    <h3 class="mb-0 fw-bold">Yeni Şifre Belirleme</h3>
+                </div>
+                <div class="card-body p-4 p-md-5 auth-form">
+                    {% if validlink %}
+                        <form method="POST">
+                            {% csrf_token %}
+                            {{ form.as_p }}
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-success btn-lg fw-bold">Yeni Şifreyi Kaydet</button>
+                            </div>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-danger text-center">
+                            Bu sıfırlama bağlantısı geçersiz veya süresi dolmuş. Lütfen tekrar şifre sıfırlama talebinde bulunun.
+                        </div>
+                        <div class="text-center mt-3"><a href="/sifre-sifirla/" class="btn btn-outline-danger">Tekrar Talep Et</a></div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
