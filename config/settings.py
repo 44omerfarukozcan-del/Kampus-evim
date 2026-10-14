@@ -97,3 +97,14 @@ EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'kendi.mail.adresin@gmail.com'  # Buraya kendi Gmail adresini yazmayı unutma
 EMAIL_HOST_PASSWORD = 'bohoviclwfsqhqhk'  # Aldığın uygulama şifresi
+
+# ... (Yukarıdaki mevcut ayarların hepsi olduğu gibi kalacak) ...
+
+# --- ŞİFRE SIFIRLAMA (E-POSTA) AYARLARI ---
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'kampusevim55@gmail.com'
+EMAIL_HOST_PASSWORD = 'bohoviclwfsqhqhk'
+DEFAULT_FROM_EMAIL = 'kampusevim55@gmail.com'
