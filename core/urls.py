@@ -7,6 +7,7 @@ urlpatterns = [
     path('', views.ana_sayfa, name='ana_sayfa'),
     path('giris/', views.giris_yap, name='giris_yap'),
     path('kayit/', views.kayit_ol, name='kayit_ol'),
+    path('eposta-dogrula/', views.eposta_dogrula, name='eposta_dogrula'),
     path('cikis/', views.cikis_yap, name='cikis_yap'),
     
     # ---- PROFİL VE BELGE YÜKLEME ----
@@ -20,6 +21,10 @@ urlpatterns = [
     path('ilan-duzenle/<int:id>/', views.ilan_duzenle, name='ilan_duzenle'),
     path('ilan-sil/<int:id>/', views.ilan_sil, name='ilan_sil'),
     
+    # ---- DM (ÖZEL MESAJLAŞMA) SAYFALARI ----
+    path('mesajlar/', views.mesajlar_kutusu, name='mesajlar_kutusu'),
+    path('mesajlar/<int:kullanici_id>/', views.sohbet_detay, name='sohbet_detay'),
+
     # ---- ŞİFRE SIFIRLAMA SAYFALARI ----
     path('sifre-sifirla/', auth_views.PasswordResetView.as_view(
         template_name='core/sifre_sifirla.html',

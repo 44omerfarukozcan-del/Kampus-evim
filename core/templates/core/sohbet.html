@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>@{{ karsi_taraf.username }} ile Sohbet - KampüsEvim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-4" style="max-width: 750px;">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                <h4 class="mb-0">💬 @{{ karsi_taraf.username }} ile Sohbet</h4>
+                <span class="badge bg-success">🤝 Uyum / Eşleşme Puanınız: %{{ eslesme_puani }}</span>
+            </div>
+            <a href="{% url 'mesajlar_kutusu' %}" class="btn btn-outline-secondary btn-sm">← Gelen Kutusu</a>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body" style="height: 400px; overflow-y: auto; background: #f8f9fa;">
+                {% for m in mesajlar %}
+                    {% if m.gonderen == request.user %}
+                        <div class="text-end mb-3">
+                            <div class="d-inline-block bg-primary text-white p-2 px-3 rounded-3" style="max-width: 75%;">
+                                {{ m.icerik }}
+                            </div>
+                            <div><small class="text-muted" style="font-size: 0.75rem;">{{ m.tarih|date:"H:i" }}</small></div>
+                        </div>
+                    {% else %}
+                        <div class="text-start mb-3">
+                            <div class="d-inline-block bg-white border p-2 px-3 rounded-3" style="max-width: 75%;">
+                                <strong>@{{ m.gonderen.username }}:</strong> {{ m.icerik }}
+                            </div>
+                            <div><small class="text-muted" style="font-size: 0.75rem;">{{ m.tarih|date:"H:i" }}</small></div>
+                        </div>
+                    {% endif %}
+                {% empty %}
+                    <p class="text-center text-muted mt-5">Sohbeti başlatmak için ilk mesajı gönderin!</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <form method="POST" class="card p-3 shadow-sm">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn btn-primary w-100">Gönder 🚀</button>
+        </form>
+    </div>
+</body>
+</html>

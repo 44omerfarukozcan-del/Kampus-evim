@@ -1,65 +1,132 @@
-{% extends 'core/base.html' %}
-{% block title %}İlanlar - KampüsEvim{% endblock %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>İlanlar - KampüsEvim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
 
-{% block content %}
-<h2 class="text-primary fw-bold text-center mb-4">🏠 Tüm İlanlar</h2>
-
-<!-- ARAMA FORMU -->
-<div class="card shadow-sm mb-4 border-0 bg-white">
-    <div class="card-body">
-        <form method="GET" action="/ilanlar/" class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label text-muted fw-bold">Kelime veya Semt Ara</label>
-                <input type="text" name="q" class="form-control" placeholder="Örn: Atakum, Balkonlu..." value="{{ request.GET.q }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label text-muted fw-bold">İlan Türü</label>
-                <select name="ilan_turu" class="form-select">
-                    <option value="">Tümü</option>
-                    <option value="Oda Arayan" {% if request.GET.ilan_turu == 'Oda Arayan' %}selected{% endif %}>Oda Arayan</option>
-                    <option value="Ev Arkadaşı Arayan" {% if request.GET.ilan_turu == 'Ev Arkadaşı Arayan' %}selected{% endif %}>Ev Arkadaşı Arayan</option>
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label text-muted fw-bold">Maksimum Bütçe (TL)</label>
-                <input type="number" name="max_fiyat" class="form-control" placeholder="Örn: 5000" value="{{ request.GET.max_fiyat }}">
-            </div>
-            <div class="col-md-2 d-grid gap-2">
-                <button type="submit" class="btn btn-primary fw-bold">Filtrele</button>
-                <a href="/ilanlar/" class="btn btn-outline-secondary btn-sm">Temizle</a>
-            </div>
-        </form>
-    </div>
-</div>
-<hr>
-
-<!-- İLANLAR -->
-<div class="row">
-    {% for ilan in ilanlar %}
-    <div class="col-md-4 mb-4">
-        <div class="card shadow-sm h-100 border-0">
-            <div class="card-header bg-dark text-white fw-bold">
-                {{ ilan.ilan_turu }}
-            </div>
-            <div class="card-body">
-                <h5 class="card-title text-primary">{{ ilan.baslik }}</h5>
-                <p class="card-text text-muted">{{ ilan.aciklama|truncatewords:15 }}</p>
-                <ul class="list-group list-group-flush mb-3">
-                    <li class="list-group-item px-0 text-success fw-bold"><b>Fiyat:</b> {{ ilan.fiyat }} TL / Ay</li>
-                </ul>
-            </div>
-            <!-- YENİ: DETAYLARI GÖR BUTONU EKLENDİ -->
-            <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center pb-3">
-                <small class="text-muted">{{ ilan.olusturulma_tarihi|date:"d M Y" }}</small>
-                <a href="/ilan/{{ ilan.id }}/" class="btn btn-sm btn-primary">Detayları Gör</a>
+    <!-- ÜST MENÜ (NAVBAR) -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="{% url 'ana_sayfa' %}">🏠 KampüsEvim</a>
+            <div class="d-flex gap-2">
+                <a href="{% url 'ana_sayfa' %}" class="btn btn-outline-light btn-sm">Ana Sayfa</a>
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'ilan_ekle' %}" class="btn btn-warning btn-sm fw-bold">+ İlan Ver</a>
+                    <a href="{% url 'mesajlar_kutusu' %}" class="btn btn-info btn-sm text-white">💬 Mesajlarım (DM)</a>
+                    <a href="{% url 'profil' %}" class="btn btn-light btn-sm">Profilim</a>
+                    <a href="{% url 'cikis_yap' %}" class="btn btn-danger btn-sm">Çıkış</a>
+                {% else %}
+                    <a href="{% url 'giris_yap' %}" class="btn btn-light btn-sm">Giriş Yap</a>
+                    <a href="{% url 'kayit_ol' %}" class="btn btn-warning btn-sm fw-bold">Kayıt Ol</a>
+                {% endif %}
             </div>
         </div>
+    </nav>
+
+    <div class="container pb-5">
+        <!-- BİLDİRİM MESAJLARI -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show shadow-sm">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- ARAMA VE FİLTRELEME ÇUBUĞU -->
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <h4 class="fw-bold text-primary mb-3">🔍 Ev veya Ev Arkadaşı Ara</h4>
+            <form method="GET" action="{% url 'ilanlar' %}" class="row g-3">
+                <div class="col-md-4">
+                    <input type="text" name="q" class="form-control" placeholder="Kelime ara (Örn: Atakum, eşyalı, doğalgaz...)" value="{{ request.GET.q }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="ilan_turu" class="form-select">
+                        <option value="">Tüm İlan Türleri</option>
+                        <option value="Oda Arayan" {% if request.GET.ilan_turu == 'Oda Arayan' %}selected{% endif %}>Oda Arayan</option>
+                        <option value="Ev Arkadaşı Arayan" {% if request.GET.ilan_turu == 'Ev Arkadaşı Arayan' %}selected{% endif %}>Ev Arkadaşı Arayan</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <input type="number" name="max_fiyat" class="form-control" placeholder="Maksimum Kira (TL)" value="{{ request.GET.max_fiyat }}">
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary fw-bold">Filtrele</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- İLAN LİSTESİ -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold mb-0">📋 Güncel İlanlar</h4>
+            <span class="text-muted small">Toplam {{ ilanlar.count }} ilan bulundu</span>
+        </div>
+
+        <div class="row g-4">
+            {% for ilan in ilanlar %}
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm border-0 position-relative">
+                        
+                        <!-- EŞLEŞME (UYUM) PUANI ROZETİ (Sağ Üst Köşe) -->
+                        {% if request.user.is_authenticated and ilan.eslesme_puani is not None %}
+                            <div class="position-absolute top-0 end-0 m-2" style="z-index: 2;">
+                                {% if ilan.kullanici == request.user %}
+                                    <span class="badge bg-dark shadow">📌 Senin İlanın</span>
+                                {% else %}
+                                    <span class="badge bg-success shadow fs-6">🤝 %{{ ilan.eslesme_puani }} Uyum</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+
+                        <!-- İLAN GÖRSELİ -->
+                        {% if ilan.ilan_resmi %}
+                            <img src="{{ ilan.ilan_resmi.url }}" class="card-img-top" alt="{{ ilan.baslik }}" style="height: 210px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-secondary bg-opacity-10 text-secondary d-flex align-items-center justify-content-center" style="height: 210px;">
+                                <span>📷 Görsel Yüklenmemiş</span>
+                            </div>
+                        {% endif %}
+
+                        <div class="card-body d-flex flex-column">
+                            <div class="mb-2">
+                                <span class="badge bg-primary">{{ ilan.ilan_turu }}</span>
+                                <span class="badge bg-secondary">{{ ilan.oda_sayisi }}</span>
+                            </div>
+
+                            <h5 class="card-title fw-bold text-dark mb-1">{{ ilan.baslik }}</h5>
+                            <p class="text-muted small mb-2">👤 @{{ ilan.kullanici.username }} • {{ ilan.olusturulma_tarihi|date:"d M Y" }}</p>
+                            
+                            <p class="card-text text-secondary small flex-grow-1">
+                                {{ ilan.aciklama|truncatechars:100 }}
+                            </p>
+
+                            <hr class="my-2">
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="fs-5 fw-bold text-success">{{ ilan.fiyat }} ₺ <small class="text-muted fs-6">/Ay</small></span>
+                                <a href="{% url 'ilan_detay' ilan.id %}" class="btn btn-outline-primary btn-sm fw-bold">İlanı İncele ➔</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-12">
+                    <div class="card shadow-sm border-0 p-5 text-center">
+                        <h5 class="text-muted mb-2">Henüz kriterlerinize uygun bir ilan bulunamadı.</h5>
+                        <p class="text-secondary small mb-3">İlk ilanı ekleyerek ev arkadaşını hemen bulmaya ne dersin?</p>
+                        <div>
+                            <a href="{% url 'ilan_ekle' %}" class="btn btn-primary fw-bold">+ İlk İlanı Sen Ver</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
     </div>
-    {% empty %}
-    <div class="col-12 text-center mt-5">
-        <p class="text-muted fs-5">Kriterlerinize uygun ilan bulunamadı.</p>
-        <a href="/ilan-ekle/" class="btn btn-success">İlk İlanı Sen Ver!</a>
-    </div>
-    {% endfor %}
-</div>
-{% endblock %}
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

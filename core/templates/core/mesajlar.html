@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mesajlarım (DM) - KampüsEvim</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>💬 Özel Mesajlarım (DM)</h2>
+            <a href="{% url 'ana_sayfa' %}" class="btn btn-outline-secondary">Ana Sayfaya Dön</a>
+        </div>
+        <div class="card shadow-sm">
+            <div class="list-group list-group-flush">
+                {% for kisi in konusulan_kisiler %}
+                    <a href="{% url 'sohbet_detay' kisi.id %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center p-3">
+                        <div>
+                            <h5 class="mb-1 text-primary">@{{ kisi.username }}</h5>
+                            <small class="text-muted">{{ kisi.first_name }} {{ kisi.last_name }}</small>
+                        </div>
+                        <span class="btn btn-sm btn-primary">Sohbete Git ➔</span>
+                    </a>
+                {% empty %}
+                    <div class="p-4 text-center text-muted">
+                        Henüz kimseyle mesajlaşmadınız. İlan detay sayfalarından ilan sahiplerine mesaj gönderebilirsiniz!
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
