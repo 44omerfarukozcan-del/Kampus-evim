@@ -36,14 +36,24 @@ class KullaniciKayitFormu(UserCreationForm):
 
 # 2. PROFİL VE EŞLEŞME KRİTERLERİ GÜNCELLEME FORMU
 class ProfilGuncellemeFormu(forms.ModelForm):
+    telefon = forms.CharField(
+        max_length=20,
+        required=False,
+        label="Telefon Numarası",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': '05XX XXX XX XX'})
+    )
+
     class Meta:
         model = KullaniciProfili
         fields = [
+            'profil_resmi', 'bolum',
+            'sigara_kullanimi', 'uyku_duzeni', 'evcil_hayvan', 'temizlik_aliskanligi'
+        ]
+        field_order = [
             'telefon', 'profil_resmi', 'bolum',
             'sigara_kullanimi', 'uyku_duzeni', 'evcil_hayvan', 'temizlik_aliskanligi'
         ]
         labels = {
-            'telefon': 'Telefon Numarası',
             'profil_resmi': 'Profil Resmi Seç',
             'bolum': 'Bölümünüz',
             'sigara_kullanimi': 'Sigara Kullanımı',
@@ -52,7 +62,6 @@ class ProfilGuncellemeFormu(forms.ModelForm):
             'temizlik_aliskanligi': 'Temizlik Alışkanlığı',
         }
         widgets = {
-            'telefon': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '05XX XXX XX XX'}),
             'profil_resmi': forms.FileInput(attrs={'class': 'form-control'}),
             'bolum': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Örn: Yazılım Geliştirme'}),
             'sigara_kullanimi': forms.Select(attrs={'class': 'form-select'}),
@@ -61,13 +70,19 @@ class ProfilGuncellemeFormu(forms.ModelForm):
             'temizlik_aliskanligi': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and hasattr(self.instance, 'kullanici'):
+            self.fields['telefon'].initial = getattr(self.instance.kullanici, 'telefon', '')
+
     def clean_telefon(self):
         telefon = self.cleaned_data.get('telefon')
         if telefon:
             telefon = telefon.strip()
-            mevcut = KullaniciProfili.objects.filter(telefon=telefon).exclude(kullanici=self.instance.kullanici)
-            if mevcut.exists():
-                raise forms.ValidationError("Bu telefon numarası başka bir kullanıcı tarafından kullanılıyor! Lütfen kendi numaranızı girin.")
+            if hasattr(Kullanici, 'telefon'):
+                mevcut = Kullanici.objects.filter(telefon=telefon).exclude(pk=self.instance.kullanici.pk)
+                if mevcut.exists():
+                    raise forms.ValidationError("Bu telefon numarası başka bir kullanıcı tarafından kullanılıyor! Lütfen kendi numaranızı girin.")
         return telefon
 
 
@@ -141,7 +156,7 @@ class MesajForm(forms.ModelForm):
         }
 
 
-# Yedek isimlendirmeler (Eğer başka bir yerde sonu 'u' ile biten çağrıldıysa hata vermemesi için)
+# Yedek isimlendirmeler
 OgrenciKayitFormu = KullaniciKayitFormu
 IlanFormu = IlanForm
 SicilBelgesiFormu = SicilBelgesiForm
