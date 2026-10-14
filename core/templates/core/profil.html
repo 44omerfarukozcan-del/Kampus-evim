@@ -1,147 +1,103 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profilim - KampüsEvim</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body class="bg-light">
+{% extends 'core/base.html' %}
+{% block title %}Profilim - KampüsEvim{% endblock %}
 
-    <!-- ÜST MENÜ (NAVBAR) -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm mb-4">
-        <div class="container">
-            <a class="navbar-brand fw-bold" href="{% url 'ana_sayfa' %}">🏠 KampüsEvim</a>
-            <div class="d-flex gap-2">
-                <a href="{% url 'ilanlar' %}" class="btn btn-light btn-sm">İlanlar</a>
-                <a href="{% url 'ilan_ekle' %}" class="btn btn-warning btn-sm fw-bold">+ İlan Ver</a>
-                <a href="{% url 'mesajlar_kutusu' %}" class="btn btn-info btn-sm text-white">💬 Mesajlarım (DM)</a>
-                <a href="{% url 'cikis_yap' %}" class="btn btn-danger btn-sm">Çıkış Yap</a>
-            </div>
-        </div>
-    </nav>
-
-    <div class="container pb-5">
-        <!-- BİLDİRİM VE HATA MESAJLARI (Telefon/Mail çakışması burada görünür) -->
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show shadow-sm" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+{% block content %}
+<div class="row g-4">
+    <!-- SOL SÜTUN: KULLANICI KARTI VE GÜVEN SKORU -->
+    <div class="col-md-4">
+        <div class="card shadow-sm border-0 text-center p-4 mb-4">
+            {% if profil.profil_resmi and 'default.png' not in profil.profil_resmi.name %}
+                <img src="{{ profil.profil_resmi.url }}" alt="Profil Resmi" class="rounded-circle mx-auto mb-3 shadow-sm" style="width: 130px; height: 130px; object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mx-auto mb-3 shadow-sm fw-bold" style="width: 130px; height: 130px; font-size: 3rem;">
+                    {{ request.user.username|make_list|first|upper }}
                 </div>
-            {% endfor %}
-        {% endif %}
+            {% endif %}
+            
+            <h4 class="fw-bold mb-0">@{{ request.user.username }}</h4>
+            <p class="text-muted mb-2">{{ request.user.first_name }} {{ request.user.last_name }}</p>
+            <p class="small text-secondary mb-3">📧 {{ request.user.email }}</p>
 
-        <div class="row g-4">
-            <!-- SOL SÜTUN: KULLANICI KARTI VE GÜVEN SKORU -->
-            <div class="col-md-4">
-                <div class="card shadow-sm border-0 text-center p-4 mb-4">
-                    {% if profil.profil_resmi %}
-                        <img src="{{ profil.profil_resmi.url }}" alt="Profil Resmi" class="rounded-circle mx-auto mb-3 shadow-sm" style="width: 130px; height: 130px; object-fit: cover;">
+            <!-- GÜVEN SKORU ÇUBUĞU -->
+            <div class="bg-light p-3 rounded border mb-3">
+                <div class="d-flex justify-content-between mb-1">
+                    <span class="fw-bold small">🛡️ Güven Skoru</span>
+                    <span class="fw-bold text-success">%{{ profil.guven_skoru }}</span>
+                </div>
+                <div class="progress" style="height: 12px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ profil.guven_skoru }}%;"></div>
+                </div>
+            </div>
+
+            <!-- ADLİ SİCİL DURUMU -->
+            <div class="d-grid gap-2">
+                {% if request.user.sicilbelgesi %}
+                    {% if request.user.sicilbelgesi.onay_durumu %}
+                        <span class="badge bg-success p-2">✅ Adli Sicil Belgesi Onaylı</span>
                     {% else %}
-                        <div class="rounded-circle bg-secondary text-white d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 130px; height: 130px; font-size: 2.5rem;">
-                            {{ request.user.username|make_list|first|upper }}
-                        </div>
+                        <span class="badge bg-warning text-dark p-2">⏳ Sicil Belgesi Onay Bekliyor</span>
                     {% endif %}
-                    
-                    <h4 class="fw-bold mb-0">@{{ request.user.username }}</h4>
-                    <p class="text-muted mb-2">{{ request.user.first_name }} {{ request.user.last_name }}</p>
-                    <p class="small text-secondary mb-3">📧 {{ request.user.email }}</p>
-
-                    <!-- GÜVEN SKORU ÇUBUĞU -->
-                    <div class="bg-light p-3 rounded border mb-3">
-                        <div class="d-flex justify-content-between mb-1">
-                            <span class="fw-bold small">🛡️ Güven Skoru</span>
-                            <span class="fw-bold text-success">%{{ profil.guven_skoru }}</span>
-                        </div>
-                        <div class="progress" style="height: 12px;">
-                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ profil.guven_skoru }}%;"></div>
-                        </div>
-                    </div>
-
-                    <!-- ADLİ SİCİL DURUMU -->
-                    <div class="d-grid gap-2">
-                        {% if request.user.sicilbelgesi %}
-                            {% if request.user.sicilbelgesi.onay_durumu %}
-                                <span class="badge bg-success p-2">✅ Adli Sicil Belgesi Onaylı</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark p-2">⏳ Sicil Belgesi Onay Bekliyor</span>
-                            {% endif %}
-                        {% else %}
-                            <a href="{% url 'belge_yukle' %}" class="btn btn-outline-primary btn-sm">📄 Adli Sicil Belgesi Yükle (+40 Puan)</a>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-
-            <!-- SAĞ SÜTUN: PROFİL & EŞLEŞME KRİTERLERİ GÜNCELLEME FORMU -->
-            <div class="col-md-8">
-                <div class="card shadow-sm border-0 p-4 mb-4">
-                    <h4 class="mb-3 text-primary fw-bold">⚙️ Profil Bilgileri & Eşleşme Kriterleri</h4>
-                    <p class="text-muted small">Ev arkadaşı arayan diğer öğrencilerle uyum yüzdesini (%) hesaplamak için alışkanlıklarınızı doğru seçin.</p>
-                    
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        
-                        {% for field in form %}
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">{{ field.label }}</label>
-                                {{ field }}
-                                {% if field.errors %}
-                                    <div class="text-danger small mt-1">
-                                        {% for error in field.errors %}{{ error }}{% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-
-                        <button type="submit" class="btn btn-primary w-100 fw-bold py-2">💾 Bilgilerimi Kaydet ve Güncelle</button>
-                    </form>
-                </div>
-
-                <!-- KULLANICININ KENDİ İLANLARI -->
-                <div class="card shadow-sm border-0 p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0 text-primary fw-bold">📋 Yayınladığım İlanlar</h4>
-                        <a href="{% url 'ilan_ekle' %}" class="btn btn-sm btn-success">+ Yeni İlan Ekle</a>
-                    </div>
-
-                    {% for ilan in ilanlar %}
-                        <div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center bg-white">
-                            <div class="d-flex align-items-center gap-3">
-                                {% if ilan.ilan_resmi %}
-                                    <img src="{{ ilan.ilan_resmi.url }}" class="rounded" style="width: 70px; height: 70px; object-fit: cover;">
-                                {% endif %}
-                                <div>
-                                    <h5 class="mb-1"><a href="{% url 'ilan_detay' ilan.id %}" class="text-decoration-none">{{ ilan.baslik }}</a></h5>
-                                    <span class="badge bg-info text-dark">{{ ilan.ilan_turu }}</span>
-                                    <span class="badge bg-secondary">{{ ilan.oda_sayisi }}</span>
-                                    <span class="fw-bold text-success ms-2">{{ ilan.fiyat }} TL</span>
-                                </div>
-                            </div>
-                            <div class="d-flex gap-2">
-                                <a href="{% url 'ilan_duzenle' ilan.id %}" class="btn btn-sm btn-outline-primary">Düzenle</a>
-                                <a href="{% url 'ilan_sil' ilan.id %}" class="btn btn-sm btn-outline-danger">Sil</a>
-                            </div>
-                        </div>
-                    {% empty %}
-                        <p class="text-muted mb-0">Henüz aktif bir ilanınız bulunmuyor.</p>
-                    {% endfor %}
-                </div>
+                {% else %}
+                    <a href="{% url 'belge_yukle' %}" class="btn btn-outline-primary btn-sm">📄 Adli Sicil Belgesi Yükle (+40 Puan)</a>
+                {% endif %}
             </div>
         </div>
     </div>
 
-    <style>
-        form input[type="text"], form input[type="file"], form select, form textarea {
-            display: block;
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            font-size: 1rem;
-            border: 1px solid #ced4da;
-            border-radius: 0.375rem;
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
+    <!-- SAĞ SÜTUN: PROFİL & EŞLEŞME KRİTERLERİ GÜNCELLEME FORMU -->
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 p-4 mb-4">
+            <h4 class="mb-2 text-primary fw-bold">⚙️ Profil Bilgileri & Eşleşme Kriterleri</h4>
+            <p class="text-muted small mb-4">Ev arkadaşı arayan diğer öğrencilerle uyum yüzdesini (%) hesaplamak için alışkanlıklarınızı doğru seçin.</p>
+            
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        {{ field }}
+                        {% if field.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in field.errors %}{{ error }}{% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">💾 Bilgilerimi Kaydet ve Güncelle</button>
+            </form>
+        </div>
+
+        <!-- KULLANICININ KENDİ İLANLARI -->
+        <div class="card shadow-sm border-0 p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0 text-primary fw-bold">📋 Yayınladığım İlanlar</h4>
+                <a href="{% url 'ilan_ekle' %}" class="btn btn-sm btn-success fw-bold">+ Yeni İlan Ekle</a>
+            </div>
+
+            {% for ilan in ilanlar %}
+                <div class="border rounded p-3 mb-3 d-flex justify-content-between align-items-center bg-white">
+                    <div class="d-flex align-items-center gap-3">
+                        {% if ilan.ilan_resmi %}
+                            <img src="{{ ilan.ilan_resmi.url }}" class="rounded" style="width: 70px; height: 70px; object-fit: cover;">
+                        {% endif %}
+                        <div>
+                            <h5 class="mb-1"><a href="{% url 'ilan_detay' ilan.id %}" class="text-decoration-none">{{ ilan.baslik }}</a></h5>
+                            <span class="badge bg-primary">{{ ilan.ilan_turu }}</span>
+                            <span class="badge bg-secondary">{{ ilan.oda_sayisi }}</span>
+                            <span class="fw-bold text-success ms-2">{{ ilan.fiyat }} TL</span>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'ilan_duzenle' ilan.id %}" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                        <a href="{% url 'ilan_sil' ilan.id %}" class="btn btn-sm btn-outline-danger">Sil</a>
+                    </div>
+                </div>
+            {% empty %}
+                <p class="text-muted mb-0">Henüz aktif bir ilanınız bulunmuyor.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

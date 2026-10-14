@@ -22,11 +22,20 @@
         }
         .card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.12) !important;
         }
         .navbar {
             background-color: rgba(13, 110, 253, 0.95) !important;
             backdrop-filter: blur(10px);
+        }
+        form input[type="text"], form input[type="number"], form input[type="email"], form input[type="password"], form input[type="file"], form select, form textarea {
+            display: block;
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            font-size: 1rem;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background-color: #fff;
         }
     </style>
 </head>
@@ -35,34 +44,38 @@
     <!-- ÜST MENÜ (NAVBAR) -->
     <nav class="navbar navbar-expand-lg navbar-dark shadow-sm sticky-top">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-4" href="/">🏠 KampüsEvim</a>
+            <a class="navbar-brand fw-bold fs-4" href="{% url 'ana_sayfa' %}">🏠 KampüsEvim</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto align-items-center">
-                    <li class="nav-item"><a class="nav-link" href="/ilanlar/">Tüm İlanlar</a></li>
+                    <li class="nav-item"><a class="nav-link text-white" href="{% url 'ilanlar' %}">Tüm İlanlar</a></li>
                     
                     {% if user.is_authenticated %}
-                        <li class="nav-item ms-2"><a class="btn btn-warning btn-sm fw-bold text-dark" href="/ilan-ekle/">➕ İlan Ver</a></li>
-                        <li class="nav-item ms-2"><a class="nav-link" href="/belge-yukle/">Belge Yükle</a></li>
-                        <li class="nav-item ms-2"><a class="nav-link text-white fw-bold" href="/profil/">👤 Profilim</a></li>
-                        <li class="nav-item ms-2"><a class="btn btn-outline-light btn-sm" href="/cikis/">Çıkış</a></li>
+                        <li class="nav-item ms-lg-2 my-1 my-lg-0">
+                            <a class="btn btn-warning btn-sm fw-bold text-dark" href="{% url 'ilan_ekle' %}">➕ İlan Ver</a>
+                        </li>
+                        <li class="nav-item ms-lg-2"><a class="nav-link text-white" href="{% url 'mesajlar_kutusu' %}">💬 Mesajlarım</a></li>
+                        <li class="nav-item ms-lg-2"><a class="nav-link text-white" href="{% url 'belge_yukle' %}">Belge Yükle</a></li>
+                        <li class="nav-item ms-lg-2"><a class="nav-link text-white fw-bold" href="{% url 'profil' %}">👤 Profilim</a></li>
+                        <li class="nav-item ms-lg-2 my-1 my-lg-0">
+                            <a class="btn btn-outline-light btn-sm" href="{% url 'cikis_yap' %}">Çıkış</a>
+                        </li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="/giris/">Giriş Yap</a></li>
-                        <li class="nav-item"><a class="btn btn-success text-white ms-2 px-4" href="/kayit/">Kayıt Ol</a></li>
+                        <li class="nav-item"><a class="nav-link text-white" href="{% url 'giris_yap' %}">Giriş Yap</a></li>
+                        <li class="nav-item"><a class="btn btn-success text-white ms-lg-2 px-4" href="{% url 'kayit_ol' %}">Kayıt Ol</a></li>
                     {% endif %}
                 </ul>
             </div>
         </div>
     </nav>
 
-    <!-- SAYFA İÇERİKLERİ VE HATA MESAJLARI -->
-    <main class="container mt-5 mb-5">
-        <!-- YENİ: UYARI MESAJLARI BURADA ÇIKACAK -->
+    <!-- SAYFA İÇERİKLERİ VE BİLDİRİM MESAJLARI -->
+    <main class="container mt-4 mb-5">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+                <div class="alert {% if message.tags == 'error' or message.tags == 'danger' %}alert-danger{% elif message.tags == 'warning' %}alert-warning{% else %}alert-success{% endif %} alert-dismissible fade show shadow-sm" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -83,9 +96,14 @@
                 </div>
                 <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mt-3">
                     <h5 class="text-uppercase mb-4 fw-bold text-warning">Hızlı Linkler</h5>
-                    <p><a href="/ilanlar/" class="text-white text-decoration-none">Tüm İlanlar</a></p>
-                    <p><a href="/kayit/" class="text-white text-decoration-none">Kayıt Ol</a></p>
-                    <p><a href="/giris/" class="text-white text-decoration-none">Giriş Yap</a></p>
+                    <p><a href="{% url 'ilanlar' %}" class="text-white text-decoration-none">Tüm İlanlar</a></p>
+                    {% if user.is_authenticated %}
+                        <p><a href="{% url 'profil' %}" class="text-white text-decoration-none">Profilim</a></p>
+                        <p><a href="{% url 'mesajlar_kutusu' %}" class="text-white text-decoration-none">Özel Mesajlarım (DM)</a></p>
+                    {% else %}
+                        <p><a href="{% url 'kayit_ol' %}" class="text-white text-decoration-none">Kayıt Ol</a></p>
+                        <p><a href="{% url 'giris_yap' %}" class="text-white text-decoration-none">Giriş Yap</a></p>
+                    {% endif %}
                 </div>
                 <div class="col-md-4 col-lg-3 col-xl-3 mx-auto mt-3">
                     <h5 class="text-uppercase mb-4 fw-bold text-warning">İletişim</h5>
@@ -96,7 +114,7 @@
             <hr class="mb-4">
             <div class="row align-items-center">
                 <div class="col-md-12 col-lg-12 text-center">
-                    <p>© 2026 Tüm Hakları Saklıdır: <strong class="text-warning">Ömer Faruk Özcan</strong> - KampüsEvim Projesi</p>
+                    <p class="mb-0">© 2026 Tüm Hakları Saklıdır: <strong class="text-warning">Ömer Faruk Özcan</strong> - KampüsEvim Projesi</p>
                 </div>
             </div>
         </div>
