@@ -1,0 +1,22 @@
+<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ddd; border-radius: 10px;">
+    <h2 style="color: #333; text-align: center;">KampüsEvim Şifre Sıfırlama</h2>
+    
+    <p>Merhaba <strong>{{ user.username }}</strong>,</p>
+    
+    <p>KampüsEvim hesabın için bir şifre sıfırlama talebi aldık. Yeni şifreni belirlemek için aşağıdaki butona tıklayabilirsin:</p>
+    
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ protocol }}://{{ domain }}{% url 'password_reset_confirm' uidb64=uid token=token %}" 
+           style="background-color: #ffc107; color: #000; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; font-size: 16px;">
+           Yeni Şifre Belirle
+        </a>
+    </div>
+    
+    <p style="color: #555; font-size: 14px;">Eğer bu talebi sen yapmadıysan, bu e-postayı görmezden gelebilirsin. Hesabın güvende.</p>
+    
+    <hr style="border: none; border-top: 1px solid #eee; margin-top: 30px;">
+    <p style="text-align: center; color: #888; font-size: 12px;">
+        Sevgiler,<br>
+        <strong>KampüsEvim Ekibi</strong>
+    </p>
+</div>
