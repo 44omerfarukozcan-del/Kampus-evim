@@ -3,6 +3,20 @@ from django.contrib.auth.forms import UserCreationForm
 from .models import Kullanici, KullaniciProfili, Ilan, SicilBelgesi, IlanSoru, Mesaj
 
 
+# Modellerdeki alan adlarını otomatik tespit etme (FieldError hatasını tamamen önler)
+_sicil_fields = [
+    f.name for f in SicilBelgesi._meta.fields
+    if f.name not in ('id', 'kullanici', 'onay_durumu', 'onaylandi', 'yuklenme_tarihi', 'olusturulma_tarihi')
+]
+SICIL_DOSYA_ALANI = _sicil_fields[0] if _sicil_fields else 'belge'
+
+_soru_fields = [f.name for f in IlanSoru._meta.fields if f.name in ('soru_metni', 'soru', 'icerik')]
+SORU_METNI_ALANI = _soru_fields[0] if _soru_fields else 'soru_metni'
+
+_mesaj_fields = [f.name for f in Mesaj._meta.fields if f.name in ('icerik', 'mesaj_metni', 'mesaj')]
+MESAJ_ICERIK_ALANI = _mesaj_fields[0] if _mesaj_fields else 'icerik'
+
+
 # 1. ÖĞRENCİ KAYIT FORMU (.edu.tr ve Tekil E-posta Korumalı)
 class KullaniciKayitFormu(UserCreationForm):
     email = forms.EmailField(
@@ -73,7 +87,8 @@ class ProfilGuncellemeFormu(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and hasattr(self.instance, 'kullanici'):
-            self.fields['telefon'].initial = getattr(self.instance.kullanici, 'telefon', '')
+            mevcut_tel = getattr(self.instance, 'telefon_no', None) or getattr(self.instance.kullanici, 'telefon', '')
+            self.fields['telefon'].initial = mevcut_tel
 
     def clean_telefon(self):
         telefon = self.cleaned_data.get('telefon')
@@ -82,8 +97,25 @@ class ProfilGuncellemeFormu(forms.ModelForm):
             if hasattr(Kullanici, 'telefon'):
                 mevcut = Kullanici.objects.filter(telefon=telefon).exclude(pk=self.instance.kullanici.pk)
                 if mevcut.exists():
-                    raise forms.ValidationError("Bu telefon numarası başka bir kullanıcı tarafından kullanılıyor! Lütfen kendi numaranızı girin.")
+                    raise forms.ValidationError("Bu telefon numarası başka bir kullanıcı tarafından kullanılıyor!")
+            if hasattr(KullaniciProfili, 'telefon_no'):
+                mevcut_p = KullaniciProfili.objects.filter(telefon_no=telefon).exclude(pk=self.instance.pk)
+                if mevcut_p.exists():
+                    raise forms.ValidationError("Bu telefon numarası başka bir kullanıcı tarafından kullanılıyor!")
         return telefon
+
+    def save(self, commit=True):
+        profil = super().save(commit=False)
+        telefon = self.cleaned_data.get('telefon', '')
+        if hasattr(profil, 'telefon_no'):
+            profil.telefon_no = telefon
+        if hasattr(profil, 'kullanici') and hasattr(profil.kullanici, 'telefon'):
+            profil.kullanici.telefon = telefon
+            if commit:
+                profil.kullanici.save()
+        if commit:
+            profil.save()
+        return profil
 
 
 # 3. İLAN EKLEME VE DÜZENLEME FORMU
@@ -113,12 +145,12 @@ class IlanForm(forms.ModelForm):
 class SicilBelgesiForm(forms.ModelForm):
     class Meta:
         model = SicilBelgesi
-        fields = ['belge_dosyasi']
+        fields = [SICIL_DOSYA_ALANI]
         labels = {
-            'belge_dosyasi': 'Adli Sicil Belgesi (Sadece PDF)',
+            SICIL_DOSYA_ALANI: 'Adli Sicil Belgesi (Sadece PDF)',
         }
         widgets = {
-            'belge_dosyasi': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf'}),
+            SICIL_DOSYA_ALANI: forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf'}),
         }
 
 
@@ -126,12 +158,12 @@ class SicilBelgesiForm(forms.ModelForm):
 class IlanSoruForm(forms.ModelForm):
     class Meta:
         model = IlanSoru
-        fields = ['soru_metni']
+        fields = [SORU_METNI_ALANI]
         labels = {
-            'soru_metni': 'Sorunuz',
+            SORU_METNI_ALANI: 'Sorunuz',
         }
         widgets = {
-            'soru_metni': forms.Textarea(attrs={
+            SORU_METNI_ALANI: forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'Ev hakkında merak ettiklerinizi ilan sahibine sorun...'
@@ -143,12 +175,12 @@ class IlanSoruForm(forms.ModelForm):
 class MesajForm(forms.ModelForm):
     class Meta:
         model = Mesaj
-        fields = ['icerik']
+        fields = [MESAJ_ICERIK_ALANI]
         labels = {
-            'icerik': 'Mesajınız',
+            MESAJ_ICERIK_ALANI: 'Mesajınız',
         }
         widgets = {
-            'icerik': forms.Textarea(attrs={
+            MESAJ_ICERIK_ALANI: forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 2,
                 'placeholder': 'Mesajınızı buraya yazın...'
