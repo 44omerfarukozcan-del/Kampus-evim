@@ -1,23 +1,56 @@
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>KampüsEvim - Kayıt Ol</title>
-</head>
-<body>
-    <h1>Öğrenci Kayıt Formu</h1>
-    
-    <p><em>Not: Sadece üniversite uzantılı (.edu.tr) bir e-posta ile kayıt olabilirsiniz.</em></p>
+{% extends 'base.html' %}
 
-    <!-- Kayıt Formu -->
-    <form method="POST">
-        {% csrf_token %} <!-- Django'nun güvenlik önlemi (Zorunlu) -->
-        {{ form.as_p }} <!-- forms.py'den gelen formu otomatik olarak alt alta (paragraf) dizer -->
-        
-        <button type="submit">Kayıt Ol</button>
-    </form>
-    
-    <br>
-    <a href="/">Ana Sayfaya Dön</a>
-</body>
-</html>
+{% block content %}
+<style>
+    /* Django form kutularını otomatik olarak Bootstrap tarzı modern kutulara çevirir */
+    .auth-form input {
+        display: block;
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        font-size: 1rem;
+        line-height: 1.5;
+        color: #495057;
+        background-color: #fff;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    }
+    .auth-form input:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    .auth-form label { font-weight: bold; margin-bottom: 0.5rem; color: #333; }
+    .auth-form ul { list-style: none; padding-left: 0; color: #dc3545; font-size: 0.85em; margin-top:-10px; }
+    .auth-form .helptext { font-size: 0.8em; color: #6c757d; display: block; margin-top: -10px; margin-bottom: 15px;}
+</style>
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-lg border-0 rounded-lg">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <h3 class="mb-0 fw-bold">KampüsEvim'e Kayıt Ol</h3>
+                </div>
+                <div class="card-body p-4 p-md-5 auth-form">
+                    <p class="text-muted text-center mb-4">Sadece üniversite uzantılı <strong>(.edu.tr)</strong> e-posta ile kayıt olabilirsiniz.</p>
+                    
+                    <form method="POST">
+                        {% csrf_token %}
+                        {{ form.as_p }}
+                        
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg fw-bold">Hemen Kayıt Ol</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer bg-light text-center py-3">
+                    <div class="mb-2">Zaten hesabınız var mı? <a href="/giris/" class="text-primary fw-bold text-decoration-none">Giriş Yap</a></div>
+                    <div><a href="/" class="text-muted text-decoration-none">Ana Sayfaya Dön</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
