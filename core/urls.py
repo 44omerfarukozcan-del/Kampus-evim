@@ -3,12 +3,22 @@ from django.contrib.auth import views as auth_views
 from . import views 
 
 urlpatterns = [
-    # ---- MEVCUT SAYFALARIN ----
+    # ---- TEMEL SAYFALAR ----
     path('', views.ana_sayfa, name='ana_sayfa'),
     path('giris/', views.giris_yap, name='giris_yap'),
     path('kayit/', views.kayit_ol, name='kayit_ol'),
     path('cikis/', views.cikis_yap, name='cikis_yap'),
-   
+    
+    # ---- PROFİL VE BELGE YÜKLEME ----
+    path('profil/', views.profil_sayfasi, name='profil'),
+    path('belge-yukle/', views.belge_yukle, name='belge_yukle'),
+
+    # ---- İLAN İŞLEMLERİ SAYFALARI ----
+    path('ilanlar/', views.ilanlar_listesi, name='ilanlar'), 
+    path('ilan-ekle/', views.ilan_ekle, name='ilan_ekle'),
+    path('ilan-detay/<int:id>/', views.ilan_detay, name='ilan_detay'),
+    path('ilan-duzenle/<int:id>/', views.ilan_duzenle, name='ilan_duzenle'),
+    path('ilan-sil/<int:id>/', views.ilan_sil, name='ilan_sil'),
     
     # ---- ŞİFRE SIFIRLAMA SAYFALARI ----
     path('sifre-sifirla/', auth_views.PasswordResetView.as_view(
