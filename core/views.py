@@ -159,14 +159,12 @@ def eposta_dogrula(request):
 
 # --- GİRİŞ VE ÇIKIŞ (TAMAMEN ESNEK SİSTEM) ---
 def giris_yap(request):
-    # Arka planda kalmış tüm pasif hesapları otomatik aktif et
     Kullanici.objects.filter(is_active=False).update(is_active=True)
 
     if request.method == 'POST':
         girilen_bilgi = request.POST.get('username', '').strip()
         sifre = request.POST.get('password', '').strip()
 
-        # Kullanıcıyı bul (Büyük/küçük harf duyarsız arama)
         kullanici = Kullanici.objects.filter(
             Q(username__iexact=girilen_bilgi) | Q(email__iexact=girilen_bilgi)
         ).first()
@@ -174,7 +172,6 @@ def giris_yap(request):
         if kullanici:
             sifre_dogru = kullanici.check_password(sifre)
 
-            # Şifre admin panelinden düz metin olarak kaydedilmişse düzelt
             if not sifre_dogru and kullanici.password == sifre:
                 kullanici.set_password(sifre)
                 kullanici.save()
@@ -413,52 +410,3 @@ def sohbet_detay(request, kullanici_id):
         'form': form,
         'eslesme_puani': eslesme_puani
     })
-```eof
-```html:core/templates/core/giris_yap.html
-{% extends 'core/base.html' %}
-{% block title %}Giriş Yap - KampüsEvim{% endblock %}
-
-{% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-5">
-        <div class="card shadow-sm border-0 mt-4">
-            <div class="card-header bg-dark text-white text-center py-3">
-                <h4 class="mb-0 fw-bold">Sisteme Giriş Yap</h4>
-            </div>
-            <div class="card-body p-4">
-                
-                <!-- STANDART FORMU DEVRE DIŞI BIRAKIP KENDİ GİRİŞ YAPIMIZI KULLANIYORUZ -->
-                <form method="POST" action="{% url 'giris_yap' %}">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Kullanıcı Adı veya E-posta:</label>
-                        <input type="text" name="username" class="form-control" placeholder="Kullanıcı adınız veya .edu.tr e-postanız" required autofocus>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Parola:</label>
-                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-dark w-100 py-2 fw-bold fs-5">Giriş Yap</button>
-                </form>
-
-            </div>
-            <div class="card-footer text-center bg-white p-4 border-0">
-                <p class="mb-2">Hesabınız yok mu? <a href="{% url 'kayit_ol' %}" class="fw-bold text-primary text-decoration-none">Kayıt Ol</a></p>
-                <p class="mb-2"><a href="#" class="fw-bold text-danger text-decoration-none">Şifremi Unuttum</a></p>
-                <p class="mb-0"><a href="{% url 'ana_sayfa' %}" class="text-secondary text-decoration-none small">Ana Sayfaya Dön</a></p>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-```eof
-
-Bu iki dosyayı kaydettikten sonra terminalden `git push` ve PythonAnywhere üzerinden `git reset --hard origin/main` komutlarını uygulayıp siteyi yeniden yüklemeyi unutma.
-
-<FollowUp>
-* Yükleme sonrasında giriş ekranı düzeldi mi? Tarayıcının otomatik doldurmasıyla defalarca test edebilir misin?
-* Sistemdeki kırmızı bildirim balonları yeni mesaj veya soru geldiğinde sorunsuz yanıyor mu?
-</FollowUp>
