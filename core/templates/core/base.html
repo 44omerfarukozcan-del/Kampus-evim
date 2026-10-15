@@ -52,6 +52,9 @@
             transform: scale(1.12);
             opacity: 0.9;
         }
+        .bildirim-item:hover {
+            background-color: #f1f5f9;
+        }
     </style>
 </head>
 <body>
@@ -71,7 +74,76 @@
                         <li class="nav-item ms-lg-2 my-1 my-lg-0">
                             <a class="btn btn-warning btn-sm fw-bold text-dark" href="/ilan-ekle/">➕ İlan Ver</a>
                         </li>
-                        <li class="nav-item ms-lg-2"><a class="nav-link text-white" href="/mesajlar/">💬 Mesajlarım</a></li>
+
+                        <!-- MESAJLARIM (Üstünde Kırmızı Bildirim Sayısı İle) -->
+                        <li class="nav-item ms-lg-3 my-1 my-lg-0">
+                            <a class="nav-link text-white position-relative d-inline-block px-2" href="/mesajlar/">
+                                💬 Mesajlarım
+                                {% if user.okunmamis_mesaj_sayisi > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm" style="font-size: 0.72rem;">
+                                        {{ user.okunmamis_mesaj_sayisi }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                        </li>
+
+                        <!-- AÇILIR PENCERELİ (DROPDOWN) BİLDİRİMLER MENÜSÜ -->
+                        <li class="nav-item dropdown ms-lg-3 my-1 my-lg-0">
+                            <a class="nav-link dropdown-toggle text-white position-relative d-inline-block px-2" href="#" id="bildirimDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                🔔 Bildirimler
+                                {% if user.toplam_bildirim_sayisi > 0 %}
+                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm" style="font-size: 0.72rem;">
+                                        {{ user.toplam_bildirim_sayisi }}
+                                    </span>
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 p-0 mt-2" aria-labelledby="bildirimDropdown" style="width: 330px; max-height: 420px; overflow-y: auto; border-radius: 12px;">
+                                <li class="p-3 bg-primary text-white d-flex justify-content-between align-items-center" style="border-top-left-radius: 12px; border-top-right-radius: 12px;">
+                                    <span class="fw-bold">🔔 Bildirimler</span>
+                                    <span class="badge bg-light text-primary">{{ user.toplam_bildirim_sayisi }} Yeni</span>
+                                </li>
+
+                                <!-- Okunmamış Özel Mesaj Bildirimleri -->
+                                {% for m in user.okunmamis_mesajlar_son %}
+                                    <li>
+                                        <a class="dropdown-item p-3 border-bottom text-wrap bildirim-item" href="/sohbet/{{ m.gonderen.id }}/">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <strong class="text-primary small">💬 @{{ m.gonderen.username }} mesaj gönderdi</strong>
+                                                <small class="text-muted" style="font-size: 0.7rem;">{{ m.tarih|date:"H:i" }}</small>
+                                            </div>
+                                            <div class="small text-dark">{{ m.icerik|truncatechars:50 }}</div>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+
+                                <!-- İlanlara Gelen Cevaplanmamış Soru Bildirimleri -->
+                                {% for s in user.bekleyen_sorular_son %}
+                                    <li>
+                                        <a class="dropdown-item p-3 border-bottom text-wrap bildirim-item" href="/ilan-detay/{{ s.ilan.id }}/">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <strong class="text-success small">❓ @{{ s.soran.username }} soru sordu</strong>
+                                                <small class="text-muted" style="font-size: 0.7rem;">{{ s.olusturulma_tarihi|date:"d M" }}</small>
+                                            </div>
+                                            <div class="small text-muted mb-1">İlan: {{ s.ilan.baslik|truncatechars:30 }}</div>
+                                            <div class="small text-dark">{{ s.soru_metni|truncatechars:45 }}</div>
+                                        </a>
+                                    </li>
+                                {% endfor %}
+
+                                <!-- Hiç Yeni Bildirim Yoksa -->
+                                {% if user.toplam_bildirim_sayisi == 0 %}
+                                    <li class="p-4 text-center text-muted">
+                                        <div class="fs-3 mb-1">🎉</div>
+                                        <small>Okunmamış yeni bildiriminiz bulunmuyor.</small>
+                                    </li>
+                                {% endif %}
+
+                                <li class="p-2 text-center bg-light" style="border-bottom-left-radius: 12px; border-bottom-right-radius: 12px;">
+                                    <a href="/mesajlar/" class="text-decoration-none small fw-bold text-primary">Tüm Mesajları Gör ➔</a>
+                                </li>
+                            </ul>
+                        </li>
+
                         <li class="nav-item ms-lg-2"><a class="nav-link text-white" href="/belge-yukle/">Belge Yükle</a></li>
                         <li class="nav-item ms-lg-2"><a class="nav-link text-white fw-bold" href="/profil/">👤 Profilim</a></li>
                         <li class="nav-item ms-lg-2 my-1 my-lg-0">

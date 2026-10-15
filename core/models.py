@@ -1,10 +1,40 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-# 1. KULLANICI MODELİ (.edu.tr ve E-posta Doğrulama Kodu)
+
+# 1. KULLANICI MODELİ (.edu.tr, Doğrulama Kodu ve Canlı Bildirim Sayacı)
 class Kullanici(AbstractUser):
     dogrulama_kodu = models.CharField(max_length=6, blank=True, null=True)
     eposta_dogrulandi = models.BooleanField(default=False)
+
+    @property
+    def okunmamis_mesaj_sayisi(self):
+        return self.alinan_mesajlar.filter(okundu=False).count()
+
+    @property
+    def okunmamis_mesajlar_son(self):
+        return self.alinan_mesajlar.filter(okundu=False).select_related('gonderen').order_by('-tarih')[:5]
+
+    @property
+    def bekleyen_sorular_son(self):
+        return IlanSoru.objects.filter(
+            ilan__kullanici=self
+        ).filter(
+            models.Q(cevap_metni__isnull=True) | models.Q(cevap_metni='')
+        ).exclude(soran=self).select_related('ilan', 'soran').order_by('-olusturulma_tarihi')[:5]
+
+    @property
+    def bekleyen_soru_sayisi(self):
+        return IlanSoru.objects.filter(
+            ilan__kullanici=self
+        ).filter(
+            models.Q(cevap_metni__isnull=True) | models.Q(cevap_metni='')
+        ).exclude(soran=self).count()
+
+    @property
+    def toplam_bildirim_sayisi(self):
+        return self.okunmamis_mesaj_sayisi + self.bekleyen_soru_sayisi
+
 
 # 2. ADLİ SİCİL BELGESİ MODELİ
 class SicilBelgesi(models.Model):
@@ -15,6 +45,7 @@ class SicilBelgesi(models.Model):
 
     def __str__(self):
         return f"{self.kullanici.username} Sicil Belgesi"
+
 
 # 3. KULLANICI PROFİLİ MODELİ (Telefon, Resim, Güven Skoru ve Eşleşme Kriterleri)
 class KullaniciProfili(models.Model):
@@ -45,7 +76,7 @@ class KullaniciProfili(models.Model):
         try:
             if hasattr(self.kullanici, 'sicilbelgesi') and self.kullanici.sicilbelgesi.dosya:
                 skor += 40
-        except:
+        except Exception:
             pass
         if self.profil_resmi and 'default.png' not in self.profil_resmi.name:
             skor += 10
@@ -80,7 +111,8 @@ class KullaniciProfili(models.Model):
 
         return puan
 
-# 4. İLAN MODELİ (Görsel Eklendi)
+
+# 4. İLAN MODELİ
 class Ilan(models.Model):
     ILAN_TURLERI = (
         ('Oda Arayan', 'Oda Arayan'),
@@ -99,6 +131,7 @@ class Ilan(models.Model):
     def __str__(self):
         return self.baslik
 
+
 # 5. İLAN ALTI SORU - CEVAP MODELİ
 class IlanSoru(models.Model):
     ilan = models.ForeignKey(Ilan, on_delete=models.CASCADE, related_name='sorular')
@@ -109,6 +142,7 @@ class IlanSoru(models.Model):
 
     def __str__(self):
         return f"{self.soran.username} -> {self.ilan.baslik}"
+
 
 # 6. DM (ÖZEL MESAJLAŞMA) MODELİ
 class Mesaj(models.Model):

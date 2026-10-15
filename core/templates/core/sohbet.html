@@ -1,12 +1,17 @@
 {% extends 'core/base.html' %}
-{% block title %}@{{ diger_kullanici.username }} ile Sohbet - KampüsEvim{% endblock %}
+{% block title %}@{{ karsi_taraf.username }} ile Sohbet - KampüsEvim{% endblock %}
 
 {% block content %}
 <div class="mx-auto" style="max-width: 750px;">
     <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center py-3">
-            <h5 class="mb-0 fw-bold">💬 @{{ diger_kullanici.username }} ({{ diger_kullanici.first_name }} {{ diger_kullanici.last_name }})</h5>
-            <a href="{% url 'mesajlar_kutusu' %}" class="btn btn-sm btn-light fw-bold">← Mesaj Kutusu</a>
+            <div>
+                <h5 class="mb-0 fw-bold">💬 @{{ karsi_taraf.username }} ({{ karsi_taraf.first_name }} {{ karsi_taraf.last_name }})</h5>
+                {% if eslesme_puani is not None %}
+                    <small class="badge bg-warning text-dark mt-1">🤝 Ev Arkadaşlığı Uyumunuz: %{{ eslesme_puani }}</small>
+                {% endif %}
+            </div>
+            <a href="/mesajlar/" class="btn btn-sm btn-light fw-bold">← Mesaj Kutusu</a>
         </div>
         <div class="card-body" style="height: 420px; overflow-y: auto; background: #f8f9fa;">
             {% for m in mesajlar %}
@@ -14,7 +19,7 @@
                     <div class="d-inline-block p-3 rounded-3 shadow-sm {% if m.gonderen == request.user %}bg-primary text-white{% else %}bg-white border text-dark{% endif %}" style="max-width: 75%; text-align: left;">
                         <div>{{ m.icerik }}</div>
                         <small class="d-block mt-1 {% if m.gonderen == request.user %}text-light{% else %}text-muted{% endif %}" style="font-size: 0.72rem;">
-                            {{ m.olusturulma_tarihi|date:"d M H:i" }}
+                            {{ m.tarih|date:"d M H:i" }}
                         </small>
                     </div>
                 </div>
