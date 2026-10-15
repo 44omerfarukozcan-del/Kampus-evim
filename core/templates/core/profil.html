@@ -15,11 +15,17 @@
             {% endif %}
             
             <h4 class="fw-bold mb-0">@{{ request.user.username }}</h4>
-            <p class="text-muted mb-2">{{ request.user.first_name }} {{ request.user.last_name }}</p>
-            <p class="small text-secondary mb-3">📧 {{ request.user.email }}</p>
+            <p class="text-muted mb-1">{{ request.user.first_name }} {{ request.user.last_name }}</p>
+            <p class="small text-secondary mb-1">📧 {{ request.user.email }}</p>
+            {% if profil.telefon_numarasi %}
+                <p class="small text-secondary mb-1">📞 {{ profil.telefon_numarasi }}</p>
+            {% endif %}
+            {% if profil.bolum %}
+                <p class="small text-primary fw-bold mb-3">🎓 {{ profil.bolum }}</p>
+            {% endif %}
 
             <!-- GÜVEN SKORU ÇUBUĞU -->
-            <div class="bg-light p-3 rounded border mb-3">
+            <div class="bg-light p-3 rounded border mb-3 mt-2">
                 <div class="d-flex justify-content-between mb-1">
                     <span class="fw-bold small">🛡️ Güven Skoru</span>
                     <span class="fw-bold text-success">%{{ profil.guven_skoru }}</span>
@@ -38,7 +44,7 @@
                         <span class="badge bg-warning text-dark p-2">⏳ Sicil Belgesi Onay Bekliyor</span>
                     {% endif %}
                 {% else %}
-                    <a href="{% url 'belge_yukle' %}" class="btn btn-outline-primary btn-sm">📄 Adli Sicil Belgesi Yükle (+40 Puan)</a>
+                    <a href="/belge-yukle/" class="btn btn-outline-primary btn-sm">📄 Adli Sicil Belgesi Yükle (+40 Puan)</a>
                 {% endif %}
             </div>
         </div>
@@ -50,7 +56,7 @@
             <h4 class="mb-2 text-primary fw-bold">⚙️ Profil Bilgileri & Eşleşme Kriterleri</h4>
             <p class="text-muted small mb-4">Ev arkadaşı arayan diğer öğrencilerle uyum yüzdesini (%) hesaplamak için alışkanlıklarınızı doğru seçin.</p>
             
-            <form method="POST" enctype="multipart/form-data">
+            <form method="POST" action="/profil/" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 {% for field in form %}
@@ -73,7 +79,7 @@
         <div class="card shadow-sm border-0 p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h4 class="mb-0 text-primary fw-bold">📋 Yayınladığım İlanlar</h4>
-                <a href="{% url 'ilan_ekle' %}" class="btn btn-sm btn-success fw-bold">+ Yeni İlan Ekle</a>
+                <a href="/ilan-ekle/" class="btn btn-sm btn-success fw-bold">+ Yeni İlan Ekle</a>
             </div>
 
             {% for ilan in ilanlar %}
@@ -83,15 +89,15 @@
                             <img src="{{ ilan.ilan_resmi.url }}" class="rounded" style="width: 70px; height: 70px; object-fit: cover;">
                         {% endif %}
                         <div>
-                            <h5 class="mb-1"><a href="{% url 'ilan_detay' ilan.id %}" class="text-decoration-none">{{ ilan.baslik }}</a></h5>
+                            <h5 class="mb-1"><a href="/ilan-detay/{{ ilan.id }}/" class="text-decoration-none">{{ ilan.baslik }}</a></h5>
                             <span class="badge bg-primary">{{ ilan.ilan_turu }}</span>
                             <span class="badge bg-secondary">{{ ilan.oda_sayisi }}</span>
                             <span class="fw-bold text-success ms-2">{{ ilan.fiyat }} TL</span>
                         </div>
                     </div>
                     <div class="d-flex gap-2">
-                        <a href="{% url 'ilan_duzenle' ilan.id %}" class="btn btn-sm btn-outline-primary">Düzenle</a>
-                        <a href="{% url 'ilan_sil' ilan.id %}" class="btn btn-sm btn-outline-danger">Sil</a>
+                        <a href="/ilan-duzenle/{{ ilan.id }}/" class="btn btn-sm btn-outline-primary">Düzenle</a>
+                        <a href="/ilan-sil/{{ ilan.id }}/" class="btn btn-sm btn-outline-danger">Sil</a>
                     </div>
                 </div>
             {% empty %}

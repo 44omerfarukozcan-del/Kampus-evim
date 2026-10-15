@@ -10,8 +10,10 @@ from django.db.models import Q
 from .models import Kullanici, Ilan, SicilBelgesi, KullaniciProfili, IlanSoru, Mesaj
 from .forms import KullaniciKayitFormu, SicilBelgesiForm, ProfilGuncellemeFormu, IlanForm, IlanSoruForm, MesajForm
 
+
 def ana_sayfa(request):
     return render(request, 'core/ana_sayfa.html')
+
 
 def ilanlar_listesi(request):
     aktif_ilanlar = Ilan.objects.filter(is_active=True).order_by('-olusturulma_tarihi')
@@ -38,6 +40,7 @@ def ilanlar_listesi(request):
 
     return render(request, 'core/ilanlar.html', {'ilanlar': aktif_ilanlar})
 
+
 # ÜYE OLURKEN MAİLE DOĞRULAMA KODU GÖNDERME
 def kayit_ol(request):
     if request.method == 'POST':
@@ -61,7 +64,7 @@ def kayit_ol(request):
                     recipient_list=[kullanici.email],
                     fail_silently=False,
                 )
-            except Exception as e:
+            except Exception:
                 pass
 
             request.session['dogrulanacak_kullanici_id'] = kullanici.id
@@ -74,6 +77,7 @@ def kayit_ol(request):
     else:
         form = KullaniciKayitFormu()
     return render(request, 'core/kayit_ol.html', {'form': form})
+
 
 # E-POSTA DOĞRULAMA EKRANI
 def eposta_dogrula(request):
@@ -98,6 +102,7 @@ def eposta_dogrula(request):
 
     return render(request, 'core/eposta_dogrula.html', {'email': kullanici.email})
 
+
 def giris_yap(request):
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
@@ -111,23 +116,27 @@ def giris_yap(request):
         form = AuthenticationForm()
     return render(request, 'core/giris_yap.html', {'form': form})
 
+
 def cikis_yap(request):
     logout(request)
     return redirect('ana_sayfa')
 
-@login_required(login_url='/giris/') 
+
+@login_required(login_url='/giris/')
 def belge_yukle(request):
+    mevcut_belge = SicilBelgesi.objects.filter(kullanici=request.user).first()
     if request.method == 'POST':
-        form = SicilBelgesiForm(request.POST, request.FILES) 
+        form = SicilBelgesiForm(request.POST, request.FILES, instance=mevcut_belge)
         if form.is_valid():
             belge = form.save(commit=False)
-            belge.kullanici = request.user 
+            belge.kullanici = request.user
             belge.save()
             messages.success(request, "✅ Adli sicil belgeniz başarıyla yüklendi. Yönetici onayı bekleniyor.")
             return redirect('profil')
     else:
-        form = SicilBelgesiForm()
+        form = SicilBelgesiForm(instance=mevcut_belge)
     return render(request, 'core/belge_yukle.html', {'form': form})
+
 
 @login_required(login_url='/giris/')
 def profil_sayfasi(request):
@@ -138,7 +147,7 @@ def profil_sayfasi(request):
         form = ProfilGuncellemeFormu(request.POST, request.FILES, instance=profil)
         if form.is_valid():
             form.save()
-            messages.success(request, "✅ Profil bilgileriniz ve eşleşme kriterleriniz güncellendi!")
+            messages.success(request, "✅ Profil bilgileriniz ve eşleşme kriterleriniz başarıyla kaydedildi!")
             return redirect('profil')
         else:
             for field, errors in form.errors.items():
@@ -149,27 +158,29 @@ def profil_sayfasi(request):
     
     return render(request, 'core/profil.html', {'form': form, 'profil': profil, 'ilanlar': kullanici_ilanlari})
 
+
 @login_required(login_url='/giris/')
 def ilan_ekle(request):
     try:
         if not request.user.sicilbelgesi.onay_durumu:
             messages.error(request, "⚠️ Adli Sicil Belgeniz yönetici tarafından henüz onaylanmamış! Güvenlik gereği ilan veremezsiniz.")
             return redirect('profil')
-    except:
+    except Exception:
         messages.error(request, "⚠️ İlan verebilmek için önce Adli Sicil Belgesi yüklemelisiniz!")
         return redirect('belge_yukle')
 
     if request.method == 'POST':
-        form = IlanForm(request.POST, request.FILES) # Görsel yükleme için request.FILES eklendi
+        form = IlanForm(request.POST, request.FILES)
         if form.is_valid():
             ilan = form.save(commit=False)
-            ilan.kullanici = request.user 
+            ilan.kullanici = request.user
             ilan.save()
             messages.success(request, "✅ İlanınız görseliyle birlikte başarıyla yayınlandı!")
             return redirect('ilanlar')
     else:
         form = IlanForm()
     return render(request, 'core/ilan_ekle.html', {'form': form})
+
 
 # İLAN DETAY, EŞLEŞME PUANI VE SORU-CEVAP SİSTEMİ
 def ilan_detay(request, id):
@@ -183,7 +194,6 @@ def ilan_detay(request, id):
         eslesme_puani = kullanici_profili.eslesme_puani_hesapla(ilan_sahibi_profili)
 
     if request.method == 'POST' and request.user.is_authenticated:
-        # Yeni soru sorma işlemi
         if 'soru_gonder' in request.POST:
             soru_form = IlanSoruForm(request.POST)
             if soru_form.is_valid():
@@ -194,7 +204,6 @@ def ilan_detay(request, id):
                 messages.success(request, "✅ Sorunuz ilan sahibine iletildi.")
                 return redirect('ilan_detay', id=ilan.id)
         
-        # İlan sahibinin soruya cevap vermesi
         elif 'cevap_gonder' in request.POST and request.user == ilan.kullanici:
             soru_id = request.POST.get('soru_id')
             cevap_metni = request.POST.get('cevap_metni')
@@ -215,6 +224,7 @@ def ilan_detay(request, id):
     }
     return render(request, 'core/ilan_detay.html', context)
 
+
 @login_required(login_url='/giris/')
 def ilan_duzenle(request, id):
     ilan = get_object_or_404(Ilan, id=id)
@@ -231,6 +241,7 @@ def ilan_duzenle(request, id):
         form = IlanForm(instance=ilan)
     return render(request, 'core/ilan_duzenle.html', {'form': form, 'ilan': ilan})
 
+
 @login_required(login_url='/giris/')
 def ilan_sil(request, id):
     ilan = get_object_or_404(Ilan, id=id)
@@ -242,6 +253,7 @@ def ilan_sil(request, id):
         messages.success(request, "🗑️ İlanınız silindi.")
         return redirect('profil')
     return render(request, 'core/ilan_sil.html', {'ilan': ilan})
+
 
 # DM (ÖZEL MESAJLAŞMA) KUTUSU VE SOHBET EKRANI
 @login_required(login_url='/giris/')
@@ -256,7 +268,11 @@ def mesajlar_kutusu(request):
             kisi_idleri.add(karsi_taraf.id)
             konusulan_kisiler.append(karsi_taraf)
 
-    return render(request, 'core/mesajlar.html', {'konusulan_kisiler': konusulan_kisiler})
+    return render(request, 'core/mesajlar.html', {
+        'konusulan_kisiler': konusulan_kisiler,
+        'kisiler': konusulan_kisiler
+    })
+
 
 @login_required(login_url='/giris/')
 def sohbet_detay(request, kullanici_id):
@@ -272,7 +288,6 @@ def sohbet_detay(request, kullanici_id):
     # Okunmamış mesajları okundu olarak işaretle
     mesajlar.filter(alici=request.user, okundu=False).update(okundu=True)
 
-    # İki kullanıcı arasındaki eşleşme puanını sohbet ekranında da göster
     kendi_profilim, _ = KullaniciProfili.objects.get_or_create(kullanici=request.user)
     karsi_profil, _ = KullaniciProfili.objects.get_or_create(kullanici=karsi_taraf)
     eslesme_puani = kendi_profilim.eslesme_puani_hesapla(karsi_profil)
@@ -290,6 +305,7 @@ def sohbet_detay(request, kullanici_id):
 
     return render(request, 'core/sohbet.html', {
         'karsi_taraf': karsi_taraf,
+        'diger_kullanici': karsi_taraf,
         'mesajlar': mesajlar,
         'form': form,
         'eslesme_puani': eslesme_puani
