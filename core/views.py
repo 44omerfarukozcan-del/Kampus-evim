@@ -1,3 +1,5 @@
+import os
+import json
 import random
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout
@@ -10,10 +12,60 @@ from django.db.models import Q
 from .models import Kullanici, Ilan, SicilBelgesi, KullaniciProfili, IlanSoru, Mesaj
 from .forms import KullaniciKayitFormu, SicilBelgesiForm, ProfilGuncellemeFormu, IlanForm, IlanSoruForm, MesajForm
 
+# --- TELEFON NUMARASI İÇİN YARDIMCI FONKSİYONLAR ---
+TELEFON_DOSYASI = os.path.join(settings.BASE_DIR, 'telefon_kayitlari.json')
 
+def _telefon_sozlugu_yukle():
+    if os.path.exists(TELEFON_DOSYASI):
+        try:
+            with open(TELEFON_DOSYASI, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def _telefon_oku(user, profil=None):
+    for obj in (profil, user):
+        if obj:
+            for alan in ('telefon', 'telefon_no', 'telefon_numarasi'):
+                deger = getattr(obj, alan, None)
+                if deger:
+                    return str(deger)
+    sozluk = _telefon_sozlugu_yukle()
+    return sozluk.get(str(user.id), '')
+
+def _telefon_baskasinda_var_mi(user, telefon):
+    if not telefon:
+        return False
+    sozluk = _telefon_sozlugu_yukle()
+    for uid, tel in sozluk.items():
+        if uid != str(user.id) and tel == telefon:
+            return True
+    if hasattr(Kullanici, 'telefon'):
+        if Kullanici.objects.filter(telefon=telefon).exclude(pk=user.pk).exists():
+            return True
+    return False
+
+def _telefon_kaydet(user, profil, telefon):
+    sozluk = _telefon_sozlugu_yukle()
+    sozluk[str(user.id)] = telefon
+    try:
+        with open(TELEFON_DOSYASI, 'w', encoding='utf-8') as f:
+            json.dump(sozluk, f, ensure_ascii=False, indent=2)
+    except Exception:
+        pass
+
+    for alan in ('telefon', 'telefon_no', 'telefon_numarasi'):
+        if hasattr(user, alan):
+            setattr(user, alan, telefon)
+            user.save(update_fields=[alan])
+        if profil and hasattr(profil, alan):
+            setattr(profil, alan, telefon)
+            profil.save(update_fields=[alan])
+
+# --- ANA SAYFA VE İLANLAR ---
 def ana_sayfa(request):
     return render(request, 'core/ana_sayfa.html')
-
 
 def ilanlar_listesi(request):
     aktif_ilanlar = Ilan.objects.filter(is_active=True).order_by('-olusturulma_tarihi')
@@ -28,7 +80,6 @@ def ilanlar_listesi(request):
     if max_fiyat:
         aktif_ilanlar = aktif_ilanlar.filter(fiyat__lte=max_fiyat)
 
-    # Giriş yapan kullanıcı için her ilanla olan Eşleşme Puanını hesapla
     if request.user.is_authenticated:
         kullanici_profili, _ = KullaniciProfili.objects.get_or_create(kullanici=request.user)
         for ilan in aktif_ilanlar:
@@ -40,36 +91,42 @@ def ilanlar_listesi(request):
 
     return render(request, 'core/ilanlar.html', {'ilanlar': aktif_ilanlar})
 
-
-# ÜYE OLURKEN MAİLE DOĞRULAMA KODU GÖNDERME
+# --- KAYIT VE DOĞRULAMA ---
 def kayit_ol(request):
     if request.method == 'POST':
         form = KullaniciKayitFormu(request.POST)
         if form.is_valid():
             kullanici = form.save(commit=False)
-            kullanici.is_active = False  # Kod doğrulanana kadar hesabı pasif tut
+            kullanici.is_active = True
             kod = str(random.randint(100000, 999999))
             kullanici.dogrulama_kodu = kod
             kullanici.save()
             
-            # Profilini otomatik oluştur
             KullaniciProfili.objects.get_or_create(kullanici=kullanici)
 
-            # Doğrulama mailini gönder
+            mail_gitti = False
             try:
                 send_mail(
                     subject='KampüsEvim - E-Posta Doğrulama Kodunuz',
-                    message=f'Merhaba {kullanici.username},\n\nKampüsEvim hesabınızı aktifleştirmek için doğrulama kodunuz: {kod}\n\nGüvenli günler dileriz!',
+                    message=f'Merhaba {kullanici.username},\n\nKampüsEvim hesabınızı aktifleştirmek için doğrulama kodunuz: {kod}',
                     from_email=settings.DEFAULT_FROM_EMAIL if hasattr(settings, 'DEFAULT_FROM_EMAIL') else None,
                     recipient_list=[kullanici.email],
                     fail_silently=False,
                 )
+                mail_gitti = True
             except Exception:
                 pass
 
-            request.session['dogrulanacak_kullanici_id'] = kullanici.id
-            messages.info(request, "📧 Üniversite e-postanıza 6 haneli bir doğrulama kodu gönderdik. Lütfen kodu girin.")
-            return redirect('eposta_dogrula')
+            if mail_gitti:
+                request.session['dogrulanacak_kullanici_id'] = kullanici.id
+                messages.info(request, "📧 Üniversite e-postanıza doğrulama kodu gönderildi.")
+                return redirect('eposta_dogrula')
+            else:
+                kullanici.eposta_dogrulandi = True
+                kullanici.save()
+                login(request, kullanici, backend='django.contrib.auth.backends.ModelBackend')
+                messages.success(request, "🎉 Kaydınız başarıyla tamamlandı!")
+                return redirect('ana_sayfa')
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -78,8 +135,6 @@ def kayit_ol(request):
         form = KullaniciKayitFormu()
     return render(request, 'core/kayit_ol.html', {'form': form})
 
-
-# E-POSTA DOĞRULAMA EKRANI
 def eposta_dogrula(request):
     kullanici_id = request.session.get('dogrulanacak_kullanici_id')
     if not kullanici_id:
@@ -94,34 +149,55 @@ def eposta_dogrula(request):
             kullanici.eposta_dogrulandi = True
             kullanici.dogrulama_kodu = ''
             kullanici.save()
-            login(request, kullanici)
-            messages.success(request, "🎉 E-postanız başarıyla doğrulandı! KampüsEvim'e hoş geldiniz.")
+            login(request, kullanici, backend='django.contrib.auth.backends.ModelBackend')
+            messages.success(request, "🎉 E-postanız başarıyla doğrulandı!")
             return redirect('ana_sayfa')
         else:
-            messages.error(request, "⚠️ Hatalı doğrulama kodu girdiniz! Lütfen tekrar kontrol edin.")
+            messages.error(request, "⚠️ Hatalı kod girdiniz!")
 
     return render(request, 'core/eposta_dogrula.html', {'email': kullanici.email})
 
-
+# --- GİRİŞ VE ÇIKIŞ (TAMAMEN ESNEK SİSTEM) ---
 def giris_yap(request):
-    if request.method == 'POST':
-        form = AuthenticationForm(request, data=request.POST)
-        if form.is_valid():
-            kullanici = form.get_user()
-            login(request, kullanici)
-            return redirect('ana_sayfa')
-        else:
-            messages.error(request, "⚠️ Kullanıcı adı/şifre hatalı veya e-posta adresiniz henüz doğrulanmamış!")
-    else:
-        form = AuthenticationForm()
-    return render(request, 'core/giris_yap.html', {'form': form})
+    # Arka planda kalmış tüm pasif hesapları otomatik aktif et
+    Kullanici.objects.filter(is_active=False).update(is_active=True)
 
+    if request.method == 'POST':
+        girilen_bilgi = request.POST.get('username', '').strip()
+        sifre = request.POST.get('password', '').strip()
+
+        # Kullanıcıyı bul (Büyük/küçük harf duyarsız arama)
+        kullanici = Kullanici.objects.filter(
+            Q(username__iexact=girilen_bilgi) | Q(email__iexact=girilen_bilgi)
+        ).first()
+
+        if kullanici:
+            sifre_dogru = kullanici.check_password(sifre)
+
+            # Şifre admin panelinden düz metin olarak kaydedilmişse düzelt
+            if not sifre_dogru and kullanici.password == sifre:
+                kullanici.set_password(sifre)
+                kullanici.save()
+                sifre_dogru = True
+
+            if sifre_dogru:
+                kullanici.is_active = True
+                kullanici.save(update_fields=['is_active'])
+                login(request, kullanici, backend='django.contrib.auth.backends.ModelBackend')
+                return redirect('ana_sayfa')
+            else:
+                messages.error(request, "⚠️ Girdiğiniz şifre hatalı! Lütfen kontrol edip tekrar deneyin.")
+        else:
+            messages.error(request, "⚠️ Bu kullanıcı adı veya e-posta ile kayıtlı bir hesap bulunamadı!")
+
+    form = AuthenticationForm()
+    return render(request, 'core/giris_yap.html', {'form': form})
 
 def cikis_yap(request):
     logout(request)
     return redirect('ana_sayfa')
 
-
+# --- PROFİL VE BELGE YÜKLEME ---
 @login_required(login_url='/giris/')
 def belge_yukle(request):
     mevcut_belge = SicilBelgesi.objects.filter(kullanici=request.user).first()
@@ -131,12 +207,11 @@ def belge_yukle(request):
             belge = form.save(commit=False)
             belge.kullanici = request.user
             belge.save()
-            messages.success(request, "✅ Adli sicil belgeniz başarıyla yüklendi. Yönetici onayı bekleniyor.")
+            messages.success(request, "✅ Adli sicil belgeniz yüklendi.")
             return redirect('profil')
     else:
         form = SicilBelgesiForm(instance=mevcut_belge)
     return render(request, 'core/belge_yukle.html', {'form': form})
-
 
 @login_required(login_url='/giris/')
 def profil_sayfasi(request):
@@ -144,26 +219,61 @@ def profil_sayfasi(request):
     kullanici_ilanlari = Ilan.objects.filter(kullanici=request.user).order_by('-olusturulma_tarihi')
 
     if request.method == 'POST':
-        form = ProfilGuncellemeFormu(request.POST, request.FILES, instance=profil)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "✅ Profil bilgileriniz ve eşleşme kriterleriniz başarıyla kaydedildi!")
-            return redirect('profil')
+        telefon = request.POST.get('telefon_numarasi', '').strip()
+
+        if _telefon_baskasinda_var_mi(request.user, telefon):
+            messages.error(request, "⚠️ Bu telefon numarası başka bir kullanıcı tarafından kullanılıyor!")
+            form = ProfilGuncellemeFormu(request.POST, request.FILES, instance=profil)
         else:
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"⚠️ {error}")
+            bolum = request.POST.get('bolum', '').strip()
+            sigara = request.POST.get('sigara_kullanimi', profil.sigara_kullanimi)
+            uyku = request.POST.get('uyku_duzeni', profil.uyku_duzeni)
+            evcil = request.POST.get('evcil_hayvan', profil.evcil_hayvan)
+            temizlik = request.POST.get('temizlik_aliskanligi', profil.temizlik_aliskanligi)
+
+            profil.bolum = bolum
+            if sigara: profil.sigara_kullanimi = sigara
+            if uyku: profil.uyku_duzeni = uyku
+            if evcil: profil.evcil_hayvan = evcil
+            if temizlik: profil.temizlik_aliskanligi = temizlik
+
+            if 'profil_resmi' in request.FILES:
+                profil.profil_resmi = request.FILES['profil_resmi']
+
+            profil.save()
+
+            KullaniciProfili.objects.filter(pk=profil.pk).update(
+                bolum=profil.bolum,
+                sigara_kullanimi=profil.sigara_kullanimi,
+                uyku_duzeni=profil.uyku_duzeni,
+                evcil_hayvan=profil.evcil_hayvan,
+                temizlik_aliskanligi=profil.temizlik_aliskanligi,
+            )
+
+            _telefon_kaydet(request.user, profil, telefon)
+
+            messages.success(request, "✅ Profil bilgileriniz kalıcı olarak güncellendi!")
+            return redirect('profil')
     else:
-        form = ProfilGuncellemeFormu(instance=profil)
-    
+        profil.refresh_from_db()
+        baslangic_verileri = {
+            'telefon_numarasi': _telefon_oku(request.user, profil),
+            'bolum': profil.bolum,
+            'sigara_kullanimi': profil.sigara_kullanimi,
+            'uyku_duzeni': profil.uyku_duzeni,
+            'evcil_hayvan': profil.evcil_hayvan,
+            'temizlik_aliskanligi': profil.temizlik_aliskanligi,
+        }
+        form = ProfilGuncellemeFormu(instance=profil, initial=baslangic_verileri)
+
     return render(request, 'core/profil.html', {'form': form, 'profil': profil, 'ilanlar': kullanici_ilanlari})
 
-
+# --- İLAN YÖNETİMİ ---
 @login_required(login_url='/giris/')
 def ilan_ekle(request):
     try:
         if not request.user.sicilbelgesi.onay_durumu:
-            messages.error(request, "⚠️ Adli Sicil Belgeniz yönetici tarafından henüz onaylanmamış! Güvenlik gereği ilan veremezsiniz.")
+            messages.error(request, "⚠️ Adli Sicil Belgeniz henüz onaylanmamış!")
             return redirect('profil')
     except Exception:
         messages.error(request, "⚠️ İlan verebilmek için önce Adli Sicil Belgesi yüklemelisiniz!")
@@ -175,14 +285,12 @@ def ilan_ekle(request):
             ilan = form.save(commit=False)
             ilan.kullanici = request.user
             ilan.save()
-            messages.success(request, "✅ İlanınız görseliyle birlikte başarıyla yayınlandı!")
+            messages.success(request, "✅ İlanınız yayınlandı!")
             return redirect('ilanlar')
     else:
         form = IlanForm()
     return render(request, 'core/ilan_ekle.html', {'form': form})
 
-
-# İLAN DETAY, EŞLEŞME PUANI VE SORU-CEVAP SİSTEMİ
 def ilan_detay(request, id):
     ilan = get_object_or_404(Ilan, id=id)
     sorular = ilan.sorular.all().order_by('-olusturulma_tarihi')
@@ -201,7 +309,7 @@ def ilan_detay(request, id):
                 yeni_soru.ilan = ilan
                 yeni_soru.soran = request.user
                 yeni_soru.save()
-                messages.success(request, "✅ Sorunuz ilan sahibine iletildi.")
+                messages.success(request, "✅ Sorunuz iletildi.")
                 return redirect('ilan_detay', id=ilan.id)
         
         elif 'cevap_gonder' in request.POST and request.user == ilan.kullanici:
@@ -224,7 +332,6 @@ def ilan_detay(request, id):
     }
     return render(request, 'core/ilan_detay.html', context)
 
-
 @login_required(login_url='/giris/')
 def ilan_duzenle(request, id):
     ilan = get_object_or_404(Ilan, id=id)
@@ -241,7 +348,6 @@ def ilan_duzenle(request, id):
         form = IlanForm(instance=ilan)
     return render(request, 'core/ilan_duzenle.html', {'form': form, 'ilan': ilan})
 
-
 @login_required(login_url='/giris/')
 def ilan_sil(request, id):
     ilan = get_object_or_404(Ilan, id=id)
@@ -254,8 +360,7 @@ def ilan_sil(request, id):
         return redirect('profil')
     return render(request, 'core/ilan_sil.html', {'ilan': ilan})
 
-
-# DM (ÖZEL MESAJLAŞMA) KUTUSU VE SOHBET EKRANI
+# --- ÖZEL MESAJLAŞMA (DM) ---
 @login_required(login_url='/giris/')
 def mesajlar_kutusu(request):
     mesajlar = Mesaj.objects.filter(Q(gonderen=request.user) | Q(alici=request.user)).order_by('-tarih')
@@ -273,7 +378,6 @@ def mesajlar_kutusu(request):
         'kisiler': konusulan_kisiler
     })
 
-
 @login_required(login_url='/giris/')
 def sohbet_detay(request, kullanici_id):
     karsi_taraf = get_object_or_404(Kullanici, id=kullanici_id)
@@ -285,7 +389,6 @@ def sohbet_detay(request, kullanici_id):
         (Q(gonderen=karsi_taraf) & Q(alici=request.user))
     ).order_by('tarih')
 
-    # Okunmamış mesajları okundu olarak işaretle
     mesajlar.filter(alici=request.user, okundu=False).update(okundu=True)
 
     kendi_profilim, _ = KullaniciProfili.objects.get_or_create(kullanici=request.user)
@@ -310,3 +413,52 @@ def sohbet_detay(request, kullanici_id):
         'form': form,
         'eslesme_puani': eslesme_puani
     })
+```eof
+```html:core/templates/core/giris_yap.html
+{% extends 'core/base.html' %}
+{% block title %}Giriş Yap - KampüsEvim{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-dark text-white text-center py-3">
+                <h4 class="mb-0 fw-bold">Sisteme Giriş Yap</h4>
+            </div>
+            <div class="card-body p-4">
+                
+                <!-- STANDART FORMU DEVRE DIŞI BIRAKIP KENDİ GİRİŞ YAPIMIZI KULLANIYORUZ -->
+                <form method="POST" action="{% url 'giris_yap' %}">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Kullanıcı Adı veya E-posta:</label>
+                        <input type="text" name="username" class="form-control" placeholder="Kullanıcı adınız veya .edu.tr e-postanız" required autofocus>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Parola:</label>
+                        <input type="password" name="password" class="form-control" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-dark w-100 py-2 fw-bold fs-5">Giriş Yap</button>
+                </form>
+
+            </div>
+            <div class="card-footer text-center bg-white p-4 border-0">
+                <p class="mb-2">Hesabınız yok mu? <a href="{% url 'kayit_ol' %}" class="fw-bold text-primary text-decoration-none">Kayıt Ol</a></p>
+                <p class="mb-2"><a href="#" class="fw-bold text-danger text-decoration-none">Şifremi Unuttum</a></p>
+                <p class="mb-0"><a href="{% url 'ana_sayfa' %}" class="text-secondary text-decoration-none small">Ana Sayfaya Dön</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+```eof
+
+Bu iki dosyayı kaydettikten sonra terminalden `git push` ve PythonAnywhere üzerinden `git reset --hard origin/main` komutlarını uygulayıp siteyi yeniden yüklemeyi unutma.
+
+<FollowUp>
+* Yükleme sonrasında giriş ekranı düzeldi mi? Tarayıcının otomatik doldurmasıyla defalarca test edebilir misin?
+* Sistemdeki kırmızı bildirim balonları yeni mesaj veya soru geldiğinde sorunsuz yanıyor mu?
+</FollowUp>
