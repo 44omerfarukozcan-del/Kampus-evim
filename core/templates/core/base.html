@@ -79,9 +79,9 @@
                         <li class="nav-item ms-lg-3 my-1 my-lg-0">
                             <a class="nav-link text-white position-relative d-inline-block px-2" href="/mesajlar/">
                                 💬 Mesajlarım
-                                {% if okunmamis_mesaj_sayisi > 0 %}
+                                {% if user.okunmamis_mesaj_sayisi > 0 %}
                                     <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow-sm" style="font-size: 0.72rem;">
-                                        {{ okunmamis_mesaj_sayisi }}
+                                        {{ user.okunmamis_mesaj_sayisi }}
                                     </span>
                                 {% endif %}
                             </a>
@@ -179,7 +179,7 @@
             <div class="row text-center text-md-start">
                 <div class="col-md-5 col-lg-5 col-xl-5 mx-auto mt-3">
                     <h5 class="text-uppercase mb-4 fw-bold text-warning">🏠 KampüsEvim</h5>
-                    <p>Samsun Üniversitesi öğrencileri için güvenilir ev ve oda arkadaşı bulma platformu. Eğitim e-postası doğrulaması ve adli sicil kontrolü ile her zaman güvende kalın.</p>
+                    <p> Üniversite öğrencileri için güvenilir ev ve oda arkadaşı bulma platformu. Eğitim e-postası doğrulaması ve adli sicil kontrolü ile her zaman güvende kalın.</p>
                 </div>
                 <div class="col-md-3 col-lg-3 col-xl-3 mx-auto mt-3">
                     <h5 class="text-uppercase mb-4 fw-bold text-warning">Hızlı Linkler</h5>
