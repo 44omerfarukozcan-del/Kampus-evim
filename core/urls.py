@@ -28,7 +28,7 @@ urlpatterns = [
     # ---- ŞİFRE SIFIRLAMA SAYFALARI ----
     path('sifre-sifirla/', auth_views.PasswordResetView.as_view(
         template_name='core/sifre_sifirla.html',
-        email_template_name='core/sifre_sifirla_mail.html'
+        html_email_template_name='core/sifre_sifirla_mail.html'
     ), name='password_reset'),
     
     path('sifre-sifirla/basarili/', auth_views.PasswordResetDoneView.as_view(
