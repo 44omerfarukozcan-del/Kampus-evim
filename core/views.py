@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 from django.db.models import Q
+from django.http import JsonResponse  # <--- CANLI MESAJLAŞMA İÇİN EKLENDİ
 from .models import Kullanici, Ilan, SicilBelgesi, KullaniciProfili, IlanSoru, Mesaj
 from .forms import KullaniciKayitFormu, SicilBelgesiForm, ProfilGuncellemeFormu, IlanForm, IlanSoruForm, MesajForm
 
@@ -375,11 +376,27 @@ def mesajlar_kutusu(request):
         'kisiler': konusulan_kisiler
     })
 
+# --- CANLI MESAJLAŞMA İÇİN GÜNCELLENEN FONKSİYON ---
 @login_required(login_url='/giris/')
 def sohbet_detay(request, kullanici_id):
     karsi_taraf = get_object_or_404(Kullanici, id=kullanici_id)
     if karsi_taraf == request.user:
         return redirect('mesajlar_kutusu')
+
+    # AJAX ile mesaj gönderme
+    if request.method == 'POST':
+        form = MesajForm(request.POST)
+        if form.is_valid():
+            yeni_mesaj = form.save(commit=False)
+            yeni_mesaj.gonderen = request.user
+            yeni_mesaj.alici = karsi_taraf
+            yeni_mesaj.save()
+            
+            # İstek AJAX'tan (JavaScript'ten) geldiyse sadece OK yanıtı dön
+            if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+                return JsonResponse({'status': 'ok'})
+                
+            return redirect('sohbet_detay', kullanici_id=karsi_taraf.id)
 
     mesajlar = Mesaj.objects.filter(
         (Q(gonderen=request.user) & Q(alici=karsi_taraf)) |
@@ -388,20 +405,22 @@ def sohbet_detay(request, kullanici_id):
 
     mesajlar.filter(alici=request.user, okundu=False).update(okundu=True)
 
+    # AJAX ile mesajları 2 saniyede bir çekme
+    if request.headers.get('x-requested-with') == 'XMLHttpRequest' and request.method == 'GET':
+        mesaj_listesi = []
+        for m in mesajlar:
+            mesaj_listesi.append({
+                'icerik': m.icerik,
+                'benim_mesajim': m.gonderen == request.user,
+                'tarih': m.tarih.strftime('%d %b %H:%M')
+            })
+        return JsonResponse({'mesajlar': mesaj_listesi})
+
     kendi_profilim, _ = KullaniciProfili.objects.get_or_create(kullanici=request.user)
     karsi_profil, _ = KullaniciProfili.objects.get_or_create(kullanici=karsi_taraf)
     eslesme_puani = kendi_profilim.eslesme_puani_hesapla(karsi_profil)
 
-    if request.method == 'POST':
-        form = MesajForm(request.POST)
-        if form.is_valid():
-            yeni_mesaj = form.save(commit=False)
-            yeni_mesaj.gonderen = request.user
-            yeni_mesaj.alici = karsi_taraf
-            yeni_mesaj.save()
-            return redirect('sohbet_detay', kullanici_id=karsi_taraf.id)
-    else:
-        form = MesajForm()
+    form = MesajForm()
 
     return render(request, 'core/sohbet.html', {
         'karsi_taraf': karsi_taraf,

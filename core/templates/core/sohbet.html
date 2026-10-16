@@ -36,4 +36,81 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const mesajKutusu = document.querySelector('.card-body');
+    const mesajFormu = document.querySelector('form');
+    let sonMesajSayisi = document.querySelectorAll('.card-body > div').length;
+    
+    // İlk açılışta sayfayı en alta kaydır
+    mesajKutusu.scrollTop = mesajKutusu.scrollHeight;
+
+    // Arka planda mesajları çek
+    function mesajlariGuncelle() {
+        fetch(window.location.href, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.mesajlar && data.mesajlar.length !== sonMesajSayisi) {
+                sonMesajSayisi = data.mesajlar.length;
+                mesajKutusu.innerHTML = ''; // Kutuyu temizle
+                
+                data.mesajlar.forEach(m => {
+                    const hizalama = m.benim_mesajim ? 'text-end' : '';
+                    const renk = m.benim_mesajim ? 'bg-primary text-white' : 'bg-white border text-dark';
+                    const tarihRenk = m.benim_mesajim ? 'text-light' : 'text-muted';
+                    
+                    const html = `
+                        <div class="mb-3 ${hizalama}">
+                            <div class="d-inline-block p-3 rounded-3 shadow-sm ${renk}" style="max-width: 75%; text-align: left;">
+                                <div>${m.icerik}</div>
+                                <small class="d-block mt-1 ${tarihRenk}" style="font-size: 0.72rem;">
+                                    ${m.tarih}
+                                </small>
+                            </div>
+                        </div>
+                    `;
+                    mesajKutusu.innerHTML += html;
+                });
+                
+                // Yeni mesaj geldiğinde en alta kaydır
+                mesajKutusu.scrollTop = mesajKutusu.scrollHeight;
+            }
+        });
+    }
+
+    // Formu yenileme olmadan gönder
+    mesajFormu.addEventListener('submit', function(e) {
+        e.preventDefault(); 
+        
+        const formData = new FormData(mesajFormu);
+        const mesajAlani = document.querySelector('textarea[name="icerik"]') || document.querySelector('input[name="icerik"]');
+        
+        // Boş mesaj gönderilmesini engelle
+        if (!mesajAlani || mesajAlani.value.trim() === '') return;
+        
+        fetch(window.location.href, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'ok') {
+                mesajFormu.reset(); 
+                mesajlariGuncelle(); 
+            }
+        });
+    });
+
+    // Her 2 saniyede bir yeni mesajları kontrol et
+    setInterval(mesajlariGuncelle, 2000);
+});
+</script>
 {% endblock %}
